@@ -1,0 +1,3151 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Dashboard Pencegahan adalah sebuah portal kebencanaan yang memiliki fungsi mengkompilasi berbagai prediksi bahaya berdasarkan luaran berbagai kementerian dan lembaga.">
+<title>Dashboard Pencegahan Bencana — GEOCARE UGM</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+:root {
+  --primary: #0057a8;
+  --primary-dark: #003d7a;
+  --primary-light: #e8f1fb;
+  --danger: #e53e3e;
+  --warning: #f6a800;
+  --warning-dark: #b57700;
+  --success: #1a7f5a;
+  --sidebar-w: 260px;
+  --header-h: 56px;
+  --bg: #f0f4f8;
+  --card: #ffffff;
+  --text: #1a202c;
+  --text2: #4a5568;
+  --text3: #718096;
+  --border: #e2e8f0;
+  --awas: #e53e3e;
+  --siaga: #f6a800;
+  --waspada: #38a169;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+
+/* ========== LANDING ========== */
+#landing{
+  min-height:100vh;
+  background:#071a10;
+  display:flex;flex-direction:column;
+  position:relative;overflow:hidden;
+}
+
+/* Halaman tambahan di landing */
+#page-peringatan, #page-laporan, #page-tentang, #page-webterkait {
+  display:none;
+  flex:1;
+  padding:80px 40px 40px;
+  max-width:1000px;
+  margin:0 auto;
+  width:100%;
+  background:#f0f4f8;
+  min-height:100vh;
+}
+#page-peringatan.lp-active,
+#page-laporan.lp-active,
+#page-tentang.lp-active,
+#page-webterkait.lp-active { display:block; }
+#hero-section { display:flex;flex:1; }
+#hero-section.lp-hidden { display:none; }
+
+/* NAVBAR */
+.lp-navbar {
+  position:fixed;top:0;left:0;right:0;z-index:500;
+  background:rgba(7,26,16,0.88);
+  backdrop-filter:blur(16px);
+  border-bottom:1px solid rgba(74,222,128,0.1);
+  padding:0 40px;
+  display:flex;align-items:center;justify-content:space-between;
+  height:64px;
+  box-shadow:0 2px 20px rgba(0,0,0,0.3);
+  transition:all 0.3s;
+}
+.lp-logo{display:flex;align-items:center;gap:10px;text-decoration:none;cursor:pointer;}
+.lp-logo-emblem{
+  width:40px;height:40px;border-radius:10px;
+  background:linear-gradient(135deg,#003d7a,#0057a8);
+  display:flex;align-items:center;justify-content:center;
+  font-weight:900;font-size:16px;color:white;
+  box-shadow:0 2px 8px rgba(0,87,168,0.3);
+  flex-shrink:0;
+}
+.lp-logo-text { font-size:11px;color:rgba(255,255,255,0.45);line-height:1.35; }
+.lp-logo-text strong { display:block;font-size:13px;font-weight:700;color:rgba(255,255,255,0.9); }
+.lp-nav-links {
+  display:flex;align-items:center;gap:2px;
+  list-style:none;
+}
+.lp-nav-link {
+  padding:8px 16px;border-radius:8px;font-size:13.5px;
+  font-weight:500;color:rgba(255,255,255,0.55);cursor:pointer;
+  border:none;background:transparent;font-family:inherit;
+  transition:all 0.18s;white-space:nowrap;
+  text-decoration:none;display:block;
+}
+.lp-nav-link:hover { background:rgba(74,222,128,0.1);color:rgba(255,255,255,0.9); }
+.lp-nav-link.lp-active-link {
+  background:rgba(74,222,128,0.12);color:#4ade80;font-weight:600;
+  position:relative;
+}
+.lp-nav-link.lp-active-link::after {
+  content:'';position:absolute;bottom:-1px;left:16px;right:16px;
+  height:2px;background:#4ade80;border-radius:2px 2px 0 0;
+}
+.lp-nav-right { display:flex;align-items:center;gap:10px; }
+.btn-login {
+  background:linear-gradient(135deg,#1a6b3a,#2d9e5f);
+  color:white;border:none;padding:9px 22px;border-radius:8px;
+  font-weight:700;font-size:13px;cursor:pointer;
+  transition:all 0.2s;font-family:inherit;
+  box-shadow:0 2px 10px rgba(26,107,58,0.4);
+}
+.btn-login:hover { transform:translateY(-1px);box-shadow:0 4px 16px rgba(26,107,58,0.55); }
+
+/* HERO SECTION */
+.hero-wrap {
+  flex:1;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  padding:100px 40px 60px;
+  position:relative;
+  background:linear-gradient(175deg, #0d2a1a 0%, #0f3d2a 25%, #0a2d3d 60%, #071e2e 100%);
+  overflow:hidden;
+}
+.hero-wrap::before {
+  content:'';position:absolute;inset:0;
+  background:
+    radial-gradient(ellipse 800px 500px at 70% 30%, rgba(22,130,80,0.18) 0%, transparent 65%),
+    radial-gradient(ellipse 500px 400px at 15% 75%, rgba(0,100,200,0.12) 0%, transparent 60%),
+    radial-gradient(ellipse 400px 300px at 50% 90%, rgba(0,60,100,0.2) 0%, transparent 70%);
+  z-index:0;
+}
+.hero-wrap::after {
+  content:'';position:absolute;inset:0;z-index:0;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+  background-size:60px 60px;
+  mask-image:radial-gradient(ellipse 80% 80% at 50% 50%, black, transparent);
+}
+.hero-badge {
+  display:inline-flex;align-items:center;gap:8px;
+  background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);
+  backdrop-filter:blur(10px);
+  padding:6px 16px;border-radius:20px;font-size:12px;
+  font-weight:600;color:rgba(255,255,255,0.85);margin-bottom:28px;
+  box-shadow:0 2px 12px rgba(0,0,0,0.2);
+  position:relative;z-index:1;
+}
+.badge-dot {
+  width:7px;height:7px;background:#22c55e;border-radius:50%;
+  animation:pulse 2s infinite;
+}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.5;transform:scale(0.85)}}
+.hero-title {
+  font-size:58px;font-weight:800;line-height:1.1;
+  text-align:center;letter-spacing:-0.03em;
+  color:#ffffff;margin-bottom:20px;
+  position:relative;z-index:1;
+  text-shadow:0 2px 20px rgba(0,0,0,0.4);
+}
+.hero-title .hl {
+  background:linear-gradient(135deg,#4ade80,#22d3ee);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  background-clip:text;
+}
+.hero-sub {
+  font-size:16px;color:rgba(255,255,255,0.65);line-height:1.7;
+  text-align:center;max-width:520px;margin-bottom:16px;
+  position:relative;z-index:1;
+}
+.hero-notice {
+  display:inline-flex;align-items:center;gap:8px;
+  background:rgba(246,168,0,0.12);border:1px solid rgba(246,168,0,0.3);
+  border-radius:8px;padding:8px 18px;font-size:13px;color:#fbbf24;
+  margin-bottom:40px;position:relative;z-index:1;
+}
+.hero-actions {
+  display:flex;gap:14px;justify-content:center;flex-wrap:wrap;
+  margin-bottom:50px;position:relative;z-index:1;
+}
+.btn-peta {
+  display:inline-flex;align-items:center;gap:10px;
+  background:linear-gradient(135deg,#1a6b3a,#2d9e5f);color:white;
+  padding:14px 32px;border-radius:10px;font-weight:700;font-size:15px;
+  cursor:pointer;border:none;transition:all 0.25s;font-family:inherit;
+  box-shadow:0 4px 20px rgba(26,107,58,0.4);
+}
+.btn-peta:hover{transform:translateY(-3px);box-shadow:0 8px 32px rgba(26,107,58,0.55);}
+.btn-peta-outline {
+  display:inline-flex;align-items:center;gap:10px;
+  background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.85);
+  padding:14px 28px;border-radius:10px;font-weight:600;font-size:15px;
+  cursor:pointer;border:1.5px solid rgba(255,255,255,0.2);transition:all 0.25s;font-family:inherit;
+  backdrop-filter:blur(8px);
+  box-shadow:0 2px 12px rgba(0,0,0,0.2);
+}
+.btn-peta-outline:hover{background:rgba(255,255,255,0.14);border-color:rgba(74,222,128,0.5);transform:translateY(-2px);}
+
+/* FEATURE CARDS */
+.landing-features-grid {
+  display:grid;grid-template-columns:repeat(4,1fr);
+  gap:16px;max-width:860px;width:100%;
+  position:relative;z-index:1;
+}
+.feat-card {
+  background:rgba(255,255,255,0.07);border-radius:14px;padding:18px 16px;
+  border:1px solid rgba(255,255,255,0.12);
+  backdrop-filter:blur(10px);
+  box-shadow:0 4px 20px rgba(0,0,0,0.25);
+  text-align:center;transition:all 0.2s;cursor:pointer;
+}
+.feat-card:hover{transform:translateY(-4px);background:rgba(255,255,255,0.12);box-shadow:0 8px 32px rgba(0,0,0,0.35);}
+.feat-icon{font-size:26px;margin-bottom:8px;}
+.feat-title{font-size:12px;font-weight:700;color:rgba(255,255,255,0.9);margin-bottom:4px;}
+.feat-desc{font-size:11px;color:rgba(255,255,255,0.45);}
+
+/* MAP PREVIEW */
+.hero-map-wrap {
+  position:relative;z-index:1;
+  width:100%;max-width:680px;
+  background:linear-gradient(180deg,#0d2a4a,#0a1e36);
+  border-radius:18px;overflow:hidden;
+  border:1px solid rgba(255,255,255,0.12);
+  box-shadow:0 24px 64px rgba(0,0,0,0.25), 0 0 0 1px rgba(0,0,0,0.08);
+  margin-top:8px;
+}
+.hero-map-chrome {
+  background:#1a2942;padding:10px 16px;display:flex;align-items:center;gap:8px;
+  border-bottom:1px solid rgba(255,255,255,0.07);
+}
+.chrome-dot{width:10px;height:10px;border-radius:50%;}
+.hero-map-inner { height:200px; }
+
+/* PAGE CONTENT styles */
+.lp-page-title {font-size:32px;font-weight:800;color:#0f172a;margin-bottom:8px;margin-top:8px;}
+.lp-page-sub {font-size:15px;color:#64748b;margin-bottom:36px;}
+.lp-divider {height:1px;background:linear-gradient(90deg,#0057a8,transparent);margin-bottom:32px;opacity:0.2;}
+
+/* Peringatan cards */
+.warning-grid {display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:28px;}
+.warning-card {
+  border-radius:14px;padding:24px 20px;
+  display:flex;flex-direction:column;gap:10px;
+}
+.warning-card.waspada-card{background:linear-gradient(135deg,#f0fdf4,#dcfce7);border:1px solid #86efac;}
+.warning-card.siaga-card{background:linear-gradient(135deg,#fffbeb,#fef3c7);border:1px solid #fcd34d;}
+.warning-card.awas-card{background:linear-gradient(135deg,#fef2f2,#fee2e2);border:1px solid #fca5a5;}
+.warning-card-icon{font-size:28px;}
+.warning-card-title{font-size:18px;font-weight:800;color:#0f172a;}
+.warning-card-stat{font-size:13px;color:#64748b;}
+.warning-card-stat span{font-weight:700;color:#0f172a;font-size:16px;}
+.warning-search {
+  display:flex;align-items:center;gap:10px;margin-bottom:24px;
+}
+.warning-search input {
+  flex:1;padding:12px 16px;border-radius:10px;border:1.5px solid #e2e8f0;
+  font-size:14px;font-family:inherit;outline:none;transition:border 0.15s;
+}
+.warning-search input:focus{border-color:#0057a8;}
+.warning-search button {
+  padding:12px 20px;border-radius:10px;
+  background:#0057a8;color:white;border:none;
+  font-family:inherit;font-weight:600;cursor:pointer;font-size:14px;
+}
+
+/* Laporan kalender */
+.lp-calendar-wrap{background:white;border-radius:16px;padding:28px;border:1px solid #e2e8f0;box-shadow:0 2px 12px rgba(0,0,0,0.05);}
+.lp-cal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;}
+.lp-cal-title{font-size:18px;font-weight:700;}
+.lp-cal-nav{display:flex;gap:8px;}
+.lp-cal-btn{width:34px;height:34px;border-radius:8px;border:1px solid #e2e8f0;background:white;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;transition:all 0.15s;}
+.lp-cal-btn:hover{background:#ebf4ff;border-color:#0057a8;color:#0057a8;}
+.lp-cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;}
+.lp-cal-day-head{text-align:center;font-size:11px;font-weight:700;color:#94a3b8;padding:6px 0;text-transform:uppercase;}
+.lp-cal-day{aspect-ratio:1;display:flex;align-items:center;justify-content:center;border-radius:8px;font-size:13px;color:#374151;cursor:pointer;transition:all 0.15s;}
+.lp-cal-day:hover{background:#ebf4ff;color:#0057a8;}
+.lp-cal-day.today{background:#0057a8;color:white;font-weight:700;}
+.lp-cal-day.empty{cursor:default;}
+.lp-lapor-btn{display:inline-flex;align-items:center;gap:10px;background:linear-gradient(135deg,#f6a800,#d97706);color:white;padding:13px 28px;border-radius:10px;font-weight:700;font-size:15px;border:none;cursor:pointer;font-family:inherit;box-shadow:0 4px 16px rgba(246,168,0,0.35);margin-top:24px;transition:all 0.2s;}
+.lp-lapor-btn:hover{transform:translateY(-2px);box-shadow:0 6px 24px rgba(246,168,0,0.45);}
+
+/* Tentang */
+.about-section{background:white;border-radius:16px;padding:28px;border:1px solid #e2e8f0;margin-bottom:20px;box-shadow:0 2px 12px rgba(0,0,0,0.04);}
+.about-section h3{font-size:16px;font-weight:700;color:#0f172a;margin-bottom:14px;}
+.about-source-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;}
+.source-item{display:flex;align-items:center;gap:12px;padding:14px;border-radius:10px;background:#f8fafc;border:1px solid #e2e8f0;}
+.source-badge{width:42px;height:42px;border-radius:10px;display:flex;align-items:center;justify-content:center;color:white;font-weight:800;font-size:12px;flex-shrink:0;}
+.source-name{font-size:13px;font-weight:700;color:#0f172a;}
+.source-sub{font-size:11px;color:#94a3b8;margin-top:2px;}
+
+/* Web Terkait */
+.webterkait-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;}
+.wt-card{background:white;border-radius:14px;padding:22px;border:1px solid #e2e8f0;display:flex;flex-direction:column;gap:8px;box-shadow:0 2px 10px rgba(0,0,0,0.04);transition:all 0.2s;cursor:pointer;}
+.wt-card:hover{transform:translateY(-3px);box-shadow:0 8px 24px rgba(0,0,0,0.09);border-color:#0057a8;}
+.wt-logo{width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;color:white;font-weight:800;font-size:13px;margin-bottom:4px;}
+.wt-name{font-size:15px;font-weight:700;color:#0f172a;}
+.wt-url{font-size:12px;color:#0057a8;}
+.wt-desc{font-size:12px;color:#64748b;line-height:1.5;}
+
+/* ===== LAPOR FORM ===== */
+.lapor-step{display:flex;flex-direction:column;align-items:center;gap:4px;}
+.step-num{width:32px;height:32px;border-radius:50%;background:#e2e8f0;color:#64748b;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;transition:all 0.3s;}
+.step-label{font-size:11px;color:#94a3b8;font-weight:600;white-space:nowrap;}
+.lapor-step.active .step-num{background:#0057a8;color:white;box-shadow:0 0 0 4px rgba(0,87,168,0.15);}
+.lapor-step.active .step-label{color:#0057a8;}
+.lapor-step.done .step-num{background:#22c55e;color:white;}
+.step-line{flex:1;height:2px;background:#e2e8f0;min-width:40px;margin-bottom:14px;}
+.lapor-card{background:white;border-radius:16px;padding:28px;border:1px solid #e2e8f0;box-shadow:0 2px 12px rgba(0,0,0,0.05);margin-bottom:20px;}
+.lapor-form-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-bottom:20px;}
+.lapor-form-group{display:flex;flex-direction:column;gap:6px;}
+.lapor-label{font-size:13px;font-weight:600;color:#374151;}
+.req{color:#e53e3e;}
+.lapor-input{padding:10px 14px;border-radius:8px;border:1.5px solid #e2e8f0;font-family:inherit;font-size:13.5px;outline:none;transition:border 0.15s;background:white;width:100%;}
+.lapor-input:focus{border-color:#0057a8;box-shadow:0 0 0 3px rgba(0,87,168,0.08);}
+textarea.lapor-input{resize:vertical;min-height:72px;}
+.lapor-nav{display:flex;justify-content:space-between;align-items:center;padding-top:16px;border-top:1px solid #e2e8f0;}
+.btn-lapor-next{background:linear-gradient(135deg,#0057a8,#003d7a);color:white;border:none;padding:10px 24px;border-radius:8px;font-weight:700;font-size:13.5px;cursor:pointer;font-family:inherit;transition:all 0.2s;}
+.btn-lapor-next:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(0,87,168,0.35);}
+.btn-lapor-back{background:white;color:#4a5568;border:1.5px solid #e2e8f0;padding:10px 20px;border-radius:8px;font-weight:600;font-size:13px;cursor:pointer;font-family:inherit;transition:all 0.2s;}
+.btn-lapor-back:hover{background:#f0f4f8;}
+.btn-lapor-submit{background:linear-gradient(135deg,#22c55e,#16a34a);color:white;border:none;padding:11px 28px;border-radius:8px;font-weight:700;font-size:14px;cursor:pointer;font-family:inherit;transition:all 0.2s;box-shadow:0 4px 16px rgba(34,197,94,0.3);}
+.btn-lapor-submit:hover{transform:translateY(-1px);box-shadow:0 6px 24px rgba(34,197,94,0.45);}
+.lapor-check{display:flex;align-items:center;gap:6px;font-size:13px;color:#374151;cursor:pointer;padding:6px 12px;border-radius:6px;border:1px solid #e2e8f0;transition:all 0.15s;}
+.lapor-check:hover{background:#f0f7ff;border-color:#0057a8;}
+.lapor-upload-area{border:2px dashed #bae6fd;border-radius:12px;padding:32px 20px;text-align:center;cursor:pointer;transition:all 0.2s;background:#f0f9ff;}
+.lapor-upload-area:hover,.lapor-upload-area.dragover{border-color:#0057a8;background:#ebf4ff;}
+.foto-thumb{width:72px;height:72px;object-fit:cover;border-radius:8px;border:2px solid #e2e8f0;position:relative;}
+.foto-thumb-wrap{position:relative;display:inline-block;}
+.foto-remove{position:absolute;top:-6px;right:-6px;width:18px;height:18px;border-radius:50%;background:#e53e3e;color:white;border:none;cursor:pointer;font-size:10px;display:flex;align-items:center;justify-content:center;}
+
+/* ===== CHATBOT ===== */
+#chatbot-fab{position:fixed;bottom:28px;right:28px;z-index:8000;width:58px;height:58px;border-radius:50%;background:linear-gradient(135deg,#0057a8,#003d7a);color:white;border:none;cursor:pointer;font-size:24px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(0,87,168,0.45);transition:all 0.25s;animation:fabPulse 3s infinite;}
+@keyframes fabPulse{0%,100%{box-shadow:0 4px 20px rgba(0,87,168,0.45)}50%{box-shadow:0 4px 28px rgba(0,87,168,0.7)}}
+#chatbot-fab:hover{transform:scale(1.08);}
+#chatbot-fab .fab-badge{position:absolute;top:0;right:0;width:16px;height:16px;background:#22c55e;border-radius:50%;border:2px solid white;animation:pulse 2s infinite;}
+#chatbot-window{position:fixed;bottom:100px;right:28px;z-index:8000;width:340px;max-height:520px;background:white;border-radius:18px;box-shadow:0 20px 60px rgba(0,0,0,0.2);display:none;flex-direction:column;overflow:hidden;border:1px solid rgba(0,87,168,0.15);animation:chatIn 0.25s ease;}
+@keyframes chatIn{from{opacity:0;transform:scale(0.92) translateY(16px)}to{opacity:1;transform:scale(1) translateY(0)}}
+#chatbot-window.open{display:flex;}
+.chat-header{background:linear-gradient(135deg,#0057a8,#003d7a);padding:14px 18px;display:flex;align-items:center;gap:10px;flex-shrink:0;}
+.chat-avatar{width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:18px;}
+.chat-header-info{flex:1;}
+.chat-header-name{font-size:14px;font-weight:700;color:white;}
+.chat-header-status{font-size:11px;color:rgba(255,255,255,0.7);display:flex;align-items:center;gap:4px;}
+.chat-online-dot{width:6px;height:6px;background:#22c55e;border-radius:50%;}
+.chat-close{background:rgba(255,255,255,0.2);border:none;color:white;cursor:pointer;width:28px;height:28px;border-radius:8px;font-size:14px;display:flex;align-items:center;justify-content:center;transition:background 0.15s;}
+.chat-close:hover{background:rgba(255,255,255,0.35);}
+.chat-messages{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px;background:#f8fafc;}
+.chat-msg{max-width:82%;display:flex;flex-direction:column;gap:3px;}
+.chat-msg.bot{align-self:flex-start;}
+.chat-msg.user{align-self:flex-end;}
+.chat-bubble{padding:10px 14px;border-radius:14px;font-size:13px;line-height:1.5;}
+.chat-msg.bot .chat-bubble{background:white;color:#1a202c;border:1px solid #e2e8f0;border-radius:4px 14px 14px 14px;box-shadow:0 1px 4px rgba(0,0,0,0.06);}
+.chat-msg.user .chat-bubble{background:linear-gradient(135deg,#0057a8,#003d7a);color:white;border-radius:14px 4px 14px 14px;}
+.chat-suggestions{display:flex;flex-wrap:wrap;gap:6px;padding:8px 16px;border-top:1px solid #e2e8f0;background:white;}
+.chat-sug-btn{padding:5px 10px;border-radius:16px;border:1px solid #bae6fd;background:#f0f9ff;color:#0057a8;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;transition:all 0.15s;white-space:nowrap;}
+.chat-sug-btn:hover{background:#0057a8;color:white;border-color:#0057a8;}
+.chat-input-area{display:flex;gap:8px;padding:10px 14px;border-top:1px solid #e2e8f0;background:white;flex-shrink:0;}
+.chat-input{flex:1;padding:8px 12px;border-radius:8px;border:1.5px solid #e2e8f0;font-family:inherit;font-size:13px;outline:none;transition:border 0.15s;}
+.chat-input:focus{border-color:#0057a8;}
+.chat-send{background:#0057a8;color:white;border:none;border-radius:8px;padding:8px 14px;cursor:pointer;font-size:14px;transition:background 0.15s;}
+.chat-send:hover{background:#003d7a;}
+.chat-typing{display:flex;gap:4px;align-items:center;padding:6px 0;}
+.typing-dot{width:7px;height:7px;border-radius:50%;background:#94a3b8;animation:typingBounce 1.2s infinite;}
+.typing-dot:nth-child(2){animation-delay:0.2s;}
+.typing-dot:nth-child(3){animation-delay:0.4s;}
+@keyframes typingBounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-6px)}}
+
+@media(max-width:768px){
+  .lp-navbar{padding:0 16px;}
+  .lp-nav-links{display:none;}
+  .hero-title{font-size:34px;}
+  .landing-features-grid{grid-template-columns:repeat(2,1fr);}
+  .warning-grid{grid-template-columns:1fr;}
+  .about-source-grid,.webterkait-grid{grid-template-columns:1fr;}
+  .lapor-form-grid{grid-template-columns:1fr;}
+  #chatbot-window{width:calc(100vw - 32px);right:16px;}
+}
+
+/* ========== LOGIN ========== */
+#login-page{
+  display:none;min-height:100vh;
+  background:linear-gradient(135deg,#071a10 0%,#0f3d2a 60%,#0a2d3d 100%);
+  align-items:center;justify-content:center;position:relative;
+}
+#login-page::before{
+  content:'';position:absolute;inset:0;
+  background-image:url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff' fill-opacity='0.04'%3E%3Ccircle cx='20' cy='20' r='1.5'/%3E%3C/g%3E%3C/svg%3E");
+}
+#login-page.active{display:flex;}
+.login-card{
+  background:white;border-radius:16px;
+  width:100%;max-width:420px;padding:44px 36px;
+  box-shadow:0 24px 64px rgba(0,0,0,0.25);position:relative;z-index:1;
+}
+.login-logo{text-align:center;margin-bottom:28px;}
+.login-logo-circle{
+  width:68px;height:68px;border-radius:16px;
+  background:linear-gradient(135deg,#003d7a,#0057a8);
+  margin:0 auto 14px;display:flex;align-items:center;justify-content:center;
+  color:white;font-size:28px;font-weight:800;
+  box-shadow:0 4px 16px rgba(0,87,168,0.35);
+}
+.login-title{font-size:22px;font-weight:700;text-align:center;margin-bottom:4px;}
+.login-sub{font-size:13px;color:var(--text3);text-align:center;margin-bottom:32px;}
+.form-group{margin-bottom:18px;}
+.form-label{font-size:13px;font-weight:600;color:var(--text2);margin-bottom:7px;display:block;}
+.form-input{
+  width:100%;padding:11px 14px;border-radius:8px;
+  border:1.5px solid var(--border);font-family:inherit;
+  font-size:14px;outline:none;transition:all 0.15s;
+}
+.form-input:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(0,87,168,0.1);}
+.btn-login-submit{
+  width:100%;padding:13px;
+  background:linear-gradient(135deg,#0057a8,#003d7a);
+  color:white;border:none;border-radius:8px;
+  font-family:inherit;font-size:15px;font-weight:700;
+  cursor:pointer;margin-top:8px;transition:all 0.15s;
+  box-shadow:0 4px 12px rgba(0,87,168,0.3);
+}
+.btn-login-submit:hover{transform:translateY(-1px);box-shadow:0 6px 18px rgba(0,87,168,0.4);}
+.login-back{text-align:center;margin-top:20px;font-size:13px;color:var(--text3);}
+.login-back a{color:var(--primary);cursor:pointer;text-decoration:none;font-weight:600;}
+.login-back a:hover{text-decoration:underline;}
+.login-divider{display:flex;align-items:center;gap:10px;margin:20px 0;color:var(--text3);font-size:12px;}
+.login-divider::before,.login-divider::after{content:'';flex:1;height:1px;background:var(--border);}
+.login-info{background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;padding:12px;font-size:12px;color:#0369a1;text-align:center;}
+
+/* ========== MAIN APP ========== */
+#app{display:none;height:100vh;overflow:hidden;flex-direction:column;}
+#app.active{display:flex;}
+
+/* TOPBAR */
+.topbar{
+  height:var(--header-h);background:var(--primary);
+  display:flex;align-items:center;padding:0 14px;
+  gap:10px;flex-shrink:0;z-index:200;
+  box-shadow:0 2px 10px rgba(0,0,0,0.25);
+}
+.topbar-logo{display:flex;align-items:center;gap:8px;color:white;min-width:210px;}
+.topbar-logo-img{
+  width:34px;height:34px;background:rgba(255,255,255,0.2);
+  border-radius:7px;display:flex;align-items:center;justify-content:center;
+  font-weight:800;font-size:15px;color:white;flex-shrink:0;
+}
+.topbar-logo-text{font-size:11px;color:rgba(255,255,255,0.9);line-height:1.3;}
+.topbar-logo-text strong{display:block;font-size:13px;color:white;font-weight:700;}
+.topbar-laman{
+  background:var(--warning);color:white;
+  padding:6px 14px;border-radius:5px;font-size:12px;font-weight:700;
+  cursor:pointer;border:none;font-family:inherit;flex-shrink:0;
+  transition:all 0.15s;
+}
+.topbar-laman:hover{background:#e09600;}
+.topbar-center{flex:1;display:flex;align-items:center;gap:6px;overflow:hidden;min-width:0;}
+.topbar-nav{display:flex;gap:3px;overflow-x:auto;flex-shrink:1;scrollbar-width:none;}
+.tnav{
+  padding:6px 14px;border-radius:6px;font-size:13px;font-weight:500;
+  color:rgba(255,255,255,0.8);cursor:pointer;border:none;background:transparent;
+  transition:all 0.15s;font-family:inherit;
+}
+.tnav:hover{background:rgba(255,255,255,0.12);color:white;}
+.tnav.active{background:rgba(255,255,255,0.22);color:white;font-weight:600;}
+.topbar-right{display:flex;align-items:center;gap:7px;}
+.topbar-date{font-size:11px;color:rgba(255,255,255,0.75);white-space:nowrap;}
+.btn-sm{
+  padding:5px 11px;border-radius:5px;font-size:12px;font-weight:500;
+  cursor:pointer;border:1px solid rgba(255,255,255,0.25);color:white;
+  background:rgba(255,255,255,0.1);transition:all 0.15s;font-family:inherit;
+}
+.btn-sm:hover{background:rgba(255,255,255,0.22);}
+
+/* LAYOUT */
+.app-body{display:flex;flex:1;overflow:hidden;}
+
+/* SIDEBAR */
+.sidebar{
+  width:var(--sidebar-w);background:white;
+  border-right:1px solid var(--border);
+  display:flex;flex-direction:column;
+  flex-shrink:0;overflow-y:auto;z-index:100;
+}
+.sidebar-date-bar{
+  background:var(--primary-light);border-bottom:1px solid #c3daf7;
+  padding:10px 12px;display:flex;align-items:center;gap:8px;
+  font-size:12px;color:var(--primary);font-weight:600;cursor:pointer;
+}
+.sidebar-date-bar svg{flex-shrink:0;}
+.sidebar-date-bar .arrow{margin-left:auto;}
+.sidebar-section{padding:10px 8px;border-bottom:1px solid var(--border);}
+.sidebar-title{
+  font-size:10px;font-weight:700;color:var(--text3);
+  text-transform:uppercase;letter-spacing:0.1em;
+  padding:2px 8px 8px;
+}
+.sidebar-item{
+  display:flex;align-items:center;gap:8px;
+  padding:8px 10px;border-radius:6px;cursor:pointer;
+  font-size:13px;color:var(--text2);
+  transition:all 0.15s;border:none;background:none;width:100%;
+  text-align:left;font-family:inherit;
+}
+.sidebar-item:hover{background:var(--primary-light);color:var(--primary);}
+.sidebar-item.active{background:var(--primary-light);color:var(--primary);font-weight:600;}
+.sidebar-item-icon{font-size:15px;flex-shrink:0;width:20px;text-align:center;}
+.sidebar-item-count{
+  margin-left:auto;background:var(--primary);
+  color:white;font-size:10px;padding:1px 7px;border-radius:10px;font-weight:700;
+}
+.sidebar-item-count.awas{background:var(--awas);}
+.sidebar-item-count.siaga{background:var(--siaga);}
+.sidebar-item-count.waspada{background:var(--waspada);}
+.bencana-list{display:flex;flex-direction:column;gap:2px;}
+.bencana-btn{
+  display:flex;align-items:center;gap:9px;
+  padding:8px 10px;border-radius:6px;cursor:pointer;
+  font-size:13px;border:none;background:none;width:100%;
+  color:var(--text2);transition:all 0.15s;text-align:left;font-family:inherit;
+}
+.bencana-btn:hover{background:#f7f9fc;}
+.bencana-btn.selected{background:var(--primary-light);color:var(--primary);font-weight:600;}
+.bencana-icon{
+  width:28px;height:28px;border-radius:6px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:14px;flex-shrink:0;
+}
+.layer-row{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:7px 10px;font-size:12px;cursor:pointer;
+  border-radius:5px;transition:background 0.1s;color:var(--text2);
+}
+.layer-row:hover{background:#f7f9fc;}
+.toggle-sw{
+  width:34px;height:19px;border-radius:10px;
+  background:#cbd5e0;position:relative;cursor:pointer;
+  transition:background 0.2s;flex-shrink:0;
+}
+.toggle-sw.on{background:var(--primary);}
+.toggle-sw::after{
+  content:'';position:absolute;
+  width:15px;height:15px;border-radius:50%;
+  background:white;top:2px;left:2px;
+  transition:transform 0.2s;
+  box-shadow:0 1px 3px rgba(0,0,0,0.15);
+}
+.toggle-sw.on::after{transform:translateX(15px);}
+.date-area{padding:8px;}
+.date-label{font-size:11px;color:var(--text3);margin-bottom:5px;font-weight:500;}
+.date-input{
+  width:100%;padding:8px 10px;border-radius:6px;
+  border:1px solid var(--border);font-size:12px;
+  font-family:inherit;color:var(--text);outline:none;
+  transition:border 0.15s;
+}
+.date-input:focus{border-color:var(--primary);}
+
+/* MAIN CONTENT */
+.main-content{flex:1;overflow:hidden;position:relative;}
+#map{width:100%;height:100%;}
+
+/* MAP OVERLAYS */
+.map-topbar{
+  position:absolute;top:10px;left:10px;right:10px;
+  z-index:400;display:flex;gap:8px;align-items:flex-start;
+  pointer-events:none;
+}
+.map-topbar>*{pointer-events:auto;}
+.search-box{
+  background:white;border-radius:8px;padding:8px 12px;
+  display:flex;align-items:center;gap:8px;
+  border:1px solid var(--border);
+  box-shadow:0 2px 8px rgba(0,0,0,0.12);
+  flex:1;max-width:300px;
+}
+.search-input{
+  border:none;outline:none;font-family:inherit;
+  font-size:12px;color:var(--text);flex:1;
+}
+.map-action-btns{display:flex;gap:6px;}
+.map-btn{
+  background:white;border:1px solid var(--border);
+  border-radius:7px;padding:7px 12px;
+  font-size:12px;font-weight:500;
+  cursor:pointer;display:flex;align-items:center;gap:6px;
+  box-shadow:0 2px 6px rgba(0,0,0,0.08);
+  color:var(--text2);transition:all 0.15s;font-family:inherit;
+}
+.map-btn:hover{background:var(--primary-light);color:var(--primary);}
+.map-btn.active{background:var(--primary);color:white;border-color:var(--primary);}
+
+/* Legend */
+.map-legend{
+  position:absolute;bottom:50px;left:10px;z-index:400;
+  background:white;border-radius:8px;padding:10px 14px;
+  border:1px solid var(--border);
+  box-shadow:0 2px 8px rgba(0,0,0,0.1);
+  min-width:165px;
+}
+.legend-title{font-size:10px;font-weight:700;color:var(--text2);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.07em;}
+.legend-item{display:flex;align-items:center;gap:8px;font-size:12px;margin-bottom:5px;color:var(--text2);cursor:pointer;}
+.legend-item:last-child{margin-bottom:0;}
+.legend-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0;}
+.dot-awas{background:var(--awas);}
+.dot-siaga{background:var(--siaga);}
+.dot-waspada{background:var(--waspada);}
+.legend-count{margin-left:auto;font-size:11px;font-weight:700;}
+
+/* Info Panel */
+.info-panel{
+  position:absolute;top:50px;right:10px;bottom:50px;
+  z-index:400;width:300px;
+  background:white;border-radius:10px;
+  border:1px solid var(--border);
+  box-shadow:0 4px 20px rgba(0,0,0,0.12);
+  display:flex;flex-direction:column;
+  overflow:hidden;
+  transition:transform 0.3s ease,opacity 0.3s ease;
+}
+.info-panel.hidden{transform:translateX(320px);opacity:0;pointer-events:none;}
+.info-panel-header{
+  padding:12px 14px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+  background:var(--primary);color:white;
+}
+.info-panel-title{font-size:13px;font-weight:700;}
+.info-panel-close{
+  width:24px;height:24px;border-radius:50%;
+  background:rgba(255,255,255,0.2);border:none;
+  color:white;cursor:pointer;display:flex;align-items:center;justify-content:center;
+  font-size:13px;font-family:inherit;
+}
+.info-panel-body{flex:1;overflow-y:auto;padding:12px;}
+.info-tabs{display:flex;gap:4px;margin-bottom:12px;}
+.info-tab{
+  padding:5px 12px;border-radius:5px;font-size:12px;
+  cursor:pointer;border:1px solid var(--border);
+  background:white;color:var(--text2);transition:all 0.15s;font-family:inherit;
+}
+.info-tab.active{background:var(--primary);color:white;border-color:var(--primary);}
+.stat-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:12px;}
+.stat-card{border-radius:8px;padding:10px 6px;text-align:center;border:1px solid var(--border);}
+.stat-card.awas{background:#fff5f5;border-color:#fed7d7;}
+.stat-card.siaga{background:#fffaf0;border-color:#fbd38d;}
+.stat-card.waspada{background:#f0fff4;border-color:#9ae6b4;}
+.stat-val{font-size:22px;font-weight:700;line-height:1;}
+.stat-val.awas{color:var(--awas);}
+.stat-val.siaga{color:var(--warning-dark);}
+.stat-val.waspada{color:var(--success);}
+.stat-lbl{font-size:10px;color:var(--text3);margin-top:3px;font-weight:600;text-transform:uppercase;}
+.area-list{display:flex;flex-direction:column;gap:4px;}
+.area-item{
+  display:flex;align-items:center;gap:8px;
+  padding:7px 10px;border-radius:6px;
+  background:#f9fafb;font-size:12px;
+  cursor:pointer;transition:background 0.15s;
+}
+.area-item:hover{background:var(--primary-light);}
+.area-badge{
+  font-size:10px;font-weight:700;padding:2px 6px;border-radius:10px;
+  flex-shrink:0;text-transform:uppercase;
+}
+.badge-awas{background:#fed7d7;color:#9b2c2c;}
+.badge-siaga{background:#fbd38d;color:#7b341e;}
+.badge-waspada{background:#9ae6b4;color:#1a4731;}
+.area-name{flex:1;font-weight:500;}
+.area-kec{color:var(--text3);font-size:11px;}
+
+/* Status bar */
+.status-bar{
+  position:absolute;bottom:0;left:0;right:0;
+  z-index:300;display:flex;
+  pointer-events:none;
+}
+.status-card{
+  flex:1;background:rgba(20,20,20,0.82);backdrop-filter:blur(6px);
+  padding:10px 16px;display:flex;align-items:center;gap:12px;
+  border-right:1px solid rgba(255,255,255,0.08);
+}
+.status-card:last-child{border-right:none;}
+.status-card-icon{
+  width:32px;height:32px;border-radius:6px;display:flex;align-items:center;justify-content:center;
+  font-size:14px;flex-shrink:0;
+}
+.sc-waspada .status-card-icon{background:rgba(56,161,105,0.25);}
+.sc-siaga .status-card-icon{background:rgba(246,168,0,0.25);}
+.sc-awas .status-card-icon{background:rgba(229,62,62,0.25);}
+.status-card-info{flex:1;}
+.status-card-nums{font-size:11px;color:rgba(255,255,255,0.7);line-height:1.7;}
+.status-card-label{font-size:15px;font-weight:700;color:white;}
+.sc-waspada .status-card-label{color:#68d391;}
+.sc-siaga .status-card-label{color:#f6c843;}
+.sc-awas .status-card-label{color:#fc8181;}
+
+/* BOTTOM BAR */
+.bottom-panel{
+  position:absolute;bottom:0;left:0;right:0;
+  z-index:300;background:white;
+  border-top:1px solid var(--border);
+  padding:7px 16px;
+  display:flex;align-items:center;justify-content:space-between;
+  font-size:11px;color:var(--text3);
+  box-shadow:0 -2px 8px rgba(0,0,0,0.06);
+}
+.bottom-logos{display:flex;align-items:center;gap:12px;}
+.org-badge{
+  padding:3px 8px;border-radius:4px;font-size:10px;font-weight:800;color:white;
+}
+
+/* MODALS */
+.modal-overlay{
+  display:none;position:fixed;inset:0;
+  background:rgba(0,0,0,0.55);z-index:1000;
+  align-items:center;justify-content:center;
+  backdrop-filter:blur(3px);
+}
+.modal-overlay.open{display:flex;}
+.modal{
+  background:white;border-radius:14px;
+  width:90%;max-width:520px;max-height:88vh;
+  overflow:hidden;display:flex;flex-direction:column;
+  box-shadow:0 20px 60px rgba(0,0,0,0.3);
+  animation:modalIn 0.2s ease;
+}
+@keyframes modalIn{from{opacity:0;transform:scale(0.95) translateY(10px)}to{opacity:1;transform:scale(1) translateY(0)}}
+.modal-header{
+  padding:16px 20px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+  background:var(--primary);color:white;
+}
+.modal-title{font-size:15px;font-weight:700;color:white;}
+.modal-close{
+  width:28px;height:28px;border-radius:7px;
+  background:rgba(255,255,255,0.2);border:none;
+  cursor:pointer;font-size:15px;
+  display:flex;align-items:center;justify-content:center;
+  color:white;font-family:inherit;transition:background 0.15s;
+}
+.modal-close:hover{background:rgba(255,255,255,0.35);}
+.modal-body{padding:20px;overflow-y:auto;}
+.modal-section-title{font-size:12px;font-weight:700;color:var(--text3);margin-bottom:10px;text-transform:uppercase;letter-spacing:0.06em;}
+.modal-row{
+  display:flex;align-items:flex-start;
+  padding:10px 0;border-bottom:1px solid var(--border);
+  gap:12px;font-size:13px;
+}
+.modal-row-label{color:var(--text3);min-width:110px;flex-shrink:0;}
+.modal-row-value{color:var(--text);font-weight:500;}
+.modal-footer{
+  padding:12px 20px;border-top:1px solid var(--border);
+  display:flex;gap:8px;justify-content:flex-end;
+}
+.btn-primary{
+  padding:9px 20px;background:var(--primary);
+  color:white;border:none;border-radius:7px;
+  font-size:13px;font-weight:600;cursor:pointer;
+  transition:background 0.15s;font-family:inherit;
+}
+.btn-primary:hover{background:var(--primary-dark);}
+.btn-secondary{
+  padding:9px 16px;background:white;
+  color:var(--text2);border:1px solid var(--border);
+  border-radius:7px;font-size:13px;font-weight:500;
+  cursor:pointer;transition:background 0.15s;font-family:inherit;
+}
+.btn-secondary:hover{background:#f7f9fc;}
+
+/* LAPORAN VIEW */
+#view-laporan{display:none;flex:1;padding:24px;overflow-y:auto;flex-direction:column;}
+.page-header{margin-bottom:22px;}
+.page-title{font-size:20px;font-weight:700;margin-bottom:4px;}
+.page-sub{font-size:13px;color:var(--text3);}
+
+/* DATA VIEW */
+#view-data{display:none;padding:24px;overflow-y:auto;flex:1;flex-direction:column;}
+.data-filters{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;align-items:center;}
+.filter-select{
+  padding:7px 12px;border-radius:6px;
+  border:1px solid var(--border);font-family:inherit;
+  font-size:12px;outline:none;background:white;cursor:pointer;
+}
+.data-table-wrap{background:white;border-radius:10px;border:1px solid var(--border);overflow:hidden;}
+.data-table{width:100%;border-collapse:collapse;font-size:13px;}
+.data-table th{
+  background:#f8fafc;padding:10px 14px;
+  text-align:left;font-size:11px;font-weight:700;
+  color:var(--text3);text-transform:uppercase;letter-spacing:0.06em;
+  border-bottom:1px solid var(--border);
+}
+.data-table td{padding:10px 14px;border-bottom:1px solid var(--border);color:var(--text2);}
+.data-table tr:last-child td{border-bottom:none;}
+.data-table tr:hover td{background:#fafbfd;}
+.status-badge{
+  display:inline-block;padding:2px 8px;border-radius:10px;
+  font-size:11px;font-weight:700;text-transform:uppercase;
+}
+
+/* GUIDE */
+.guide-step{display:flex;gap:14px;margin-bottom:18px;align-items:flex-start;}
+.guide-num{
+  width:30px;height:30px;border-radius:50%;
+  background:var(--primary);color:white;
+  display:flex;align-items:center;justify-content:center;
+  font-size:13px;font-weight:700;flex-shrink:0;
+}
+.guide-text{font-size:13px;color:var(--text2);line-height:1.6;}
+.guide-text strong{color:var(--text);font-weight:600;}
+
+/* TOAST */
+.toast{
+  position:fixed;bottom:24px;right:24px;z-index:9999;
+  background:#1a202c;color:white;
+  padding:12px 20px;border-radius:8px;
+  font-size:13px;display:flex;align-items:center;gap:8px;
+  box-shadow:0 4px 20px rgba(0,0,0,0.25);
+  transform:translateY(80px);opacity:0;
+  transition:all 0.3s ease;pointer-events:none;
+}
+.toast.show{transform:translateY(0);opacity:1;}
+.toast.success{background:#276749;}
+.toast.error{background:#9b2c2c;}
+
+/* PROGRESS */
+.progress-bar-wrap{height:6px;background:#e2e8f0;border-radius:3px;margin:6px 0;}
+.progress-bar{height:100%;background:var(--primary);border-radius:3px;width:0%;transition:width 0.3s;}
+
+/* Pengelola orgs */
+.org-card{
+  border:1px solid var(--border);border-radius:10px;padding:14px 16px;
+  display:flex;align-items:center;gap:14px;margin-bottom:8px;
+  transition:background 0.15s;
+}
+.org-card:hover{background:#fafbfd;}
+.org-logo-box{
+  width:50px;height:50px;border-radius:10px;
+  display:flex;align-items:center;justify-content:center;
+  color:white;font-weight:800;font-size:13px;flex-shrink:0;
+}
+.org-name{font-size:13px;font-weight:700;margin-bottom:2px;}
+.org-sub{font-size:12px;color:var(--text3);}
+
+/* Analisis Wilayah chip */
+.aw-section-title{font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;margin-bottom:6px;letter-spacing:0.07em;}
+
+/* RESPONSIVE */
+@media(max-width:768px){
+  .sidebar{display:none;}
+  .info-panel{right:5px;width:260px;}
+  .landing-title{font-size:34px;}
+  .topbar-date{display:none;}
+  .status-card-nums{display:none;}
+}
+</style>
+</head>
+<body>
+
+<!-- ======== LANDING PAGE ======== -->
+<div id="landing">
+
+  <!-- NAVBAR -->
+  <nav class="lp-navbar" id="lp-navbar">
+    <div class="lp-logo" onclick="showLandingPage('home')">
+      <div class="lp-logo-emblem" style="background:linear-gradient(135deg,#1a6b3a,#2d9e5f);font-size:12px;letter-spacing:-0.5px;">GC</div>
+      <div class="lp-logo-text">
+        <strong>GEOCARE</strong>
+        Geospatial Cartography &amp; Remote Sensing for Environmental Care
+      </div>
+    </div>
+    <ul class="lp-nav-links" id="lp-nav-links">
+      <li><button class="lp-nav-link lp-active-link" id="nav-home" onclick="showLandingPage('home')">Beranda</button></li>
+      <li><button class="lp-nav-link" id="nav-peringatan" onclick="showLandingPage('peringatan')">Peringatan Bencana</button></li>
+      <li><button class="lp-nav-link" id="nav-laporan" onclick="showLandingPage('laporan')">Lapor Kejadian</button></li>
+      <li><button class="lp-nav-link" id="nav-tentang" onclick="showLandingPage('tentang')">Tentang</button></li>
+      <li><button class="lp-nav-link" id="nav-webterkait" onclick="showLandingPage('webterkait')">Web Terkait</button></li>
+    </ul>
+    <div class="lp-nav-right">
+      <button class="btn-login" onclick="showLogin()">Login</button>
+    </div>
+  </nav>
+
+  <!-- HERO SECTION (Laman Utama) -->
+  <div id="hero-section">
+    <div class="hero-wrap">
+      <div class="hero-badge">
+        <span class="badge-dot"></span>
+        Sistem Peringatan Dini Terintegrasi · Diperbarui hari ini
+      </div>
+      <h1 class="hero-title">
+        Pantau Peringatan Dini<br>
+        <span class="hl">Bencana Alam</span>
+      </h1>
+      <p class="hero-sub">
+        Portal kebencanaan nasional yang mengkompilasi prediksi bahaya berdasarkan luaran berbagai kementerian dan lembaga secara real-time.
+      </p>
+      <div class="hero-notice">
+        ⚙️ Kami meningkatkan akurasi sistem prediksi
+      </div>
+      <div class="hero-actions">
+        <button class="btn-peta" onclick="showApp()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 16l4.553-2.276A1 1 0 0021 19.764V8.236a1 1 0 00-.553-.894L15 5m0 18V5m0 0L9 7"/></svg>
+          Buka Peta Interaktif
+        </button>
+        <button class="btn-peta-outline" onclick="showLandingPage('peringatan')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+          Cek Peringatan
+        </button>
+      </div>
+
+      <!-- Feature cards -->
+      <div class="landing-features-grid">
+        <div class="feat-card" onclick="showApp()">
+          <div class="feat-icon">🗺️</div>
+          <div class="feat-title">Peta Real-Time</div>
+          <div class="feat-desc">Visualisasi sebaran bahaya interaktif</div>
+        </div>
+        <div class="feat-card" onclick="showLandingPage('peringatan')">
+          <div class="feat-icon">⚠️</div>
+          <div class="feat-title">Status Peringatan</div>
+          <div class="feat-desc">Waspada, Siaga & Awas per wilayah</div>
+        </div>
+        <div class="feat-card" onclick="showLandingPage('laporan')">
+          <div class="feat-icon">📋</div>
+          <div class="feat-title">Lapor Kejadian</div>
+          <div class="feat-desc">Laporkan bencana saat atau pasca kejadian</div>
+        </div>
+        <div class="feat-card" onclick="showApp();setTimeout(()=>switchView('data',document.querySelector('.tnav:last-child')),400)">
+          <div class="feat-icon">⬇️</div>
+          <div class="feat-title">Unduh Data</div>
+          <div class="feat-desc">CSV, Shapefile & GeoJSON tersedia</div>
+        </div>
+      </div>
+
+      <div class="hero-map-wrap" style="margin-top:40px;border:1px solid rgba(74,222,128,0.2);box-shadow:0 24px 80px rgba(0,0,0,0.5),0 0 0 1px rgba(74,222,128,0.08);">
+        <div class="hero-map-chrome" style="background:rgba(10,30,20,0.95);border-bottom:1px solid rgba(74,222,128,0.12);">
+          <div class="chrome-dot" style="background:#ff5f57;"></div>
+          <div class="chrome-dot" style="background:#febc2e;"></div>
+          <div class="chrome-dot" style="background:#28c840;"></div>
+          <span style="margin-left:8px;font-size:11px;color:rgba(74,222,128,0.5);">geocare.dashboard.ugm.ac.id/peta</span>
+          <span style="margin-left:auto;font-size:10px;color:rgba(255,255,255,0.3);background:rgba(74,222,128,0.1);padding:2px 8px;border-radius:4px;border:1px solid rgba(74,222,128,0.15);">● LIVE</span>
+        </div>
+        <div class="hero-map-inner" style="height:220px;overflow:hidden;position:relative;background:linear-gradient(180deg,#071a10,#0a2218);">
+          <svg viewBox="0 0 680 220" width="680" height="220" xmlns="http://www.w3.org/2000/svg" style="position:absolute;top:0;left:0;">
+            <!-- Grid -->
+            <defs>
+              <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+                <path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(74,222,128,0.06)" stroke-width="0.5"/>
+              </pattern>
+              <radialGradient id="glow1" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stop-color="rgba(74,222,128,0.15)"/>
+                <stop offset="100%" stop-color="transparent"/>
+              </radialGradient>
+            </defs>
+            <rect width="680" height="220" fill="url(#grid)"/>
+            <!-- Topographic contour rings - Sumatra -->
+            <ellipse cx="120" cy="100" rx="80" ry="35" fill="none" stroke="rgba(34,197,94,0.12)" stroke-width="1"/>
+            <ellipse cx="120" cy="100" rx="60" ry="24" fill="none" stroke="rgba(34,197,94,0.16)" stroke-width="1"/>
+            <ellipse cx="120" cy="100" rx="40" ry="15" fill="none" stroke="rgba(34,197,94,0.2)" stroke-width="1"/>
+            <!-- Java island stylized topographic -->
+            <ellipse cx="350" cy="115" rx="130" ry="28" fill="none" stroke="rgba(34,197,94,0.1)" stroke-width="1"/>
+            <ellipse cx="350" cy="115" rx="100" ry="20" fill="none" stroke="rgba(34,197,94,0.14)" stroke-width="1"/>
+            <ellipse cx="350" cy="115" rx="70" ry="13" fill="none" stroke="rgba(34,197,94,0.18)" stroke-width="1"/>
+            <!-- Kalimantan -->
+            <ellipse cx="490" cy="75" rx="65" ry="55" fill="none" stroke="rgba(34,197,94,0.1)" stroke-width="1"/>
+            <ellipse cx="490" cy="75" rx="45" ry="38" fill="none" stroke="rgba(34,197,94,0.14)" stroke-width="1"/>
+            <!-- Sulawesi / Maluku area -->
+            <ellipse cx="590" cy="85" rx="35" ry="25" fill="none" stroke="rgba(34,197,94,0.1)" stroke-width="1"/>
+            <!-- Papua -->
+            <ellipse cx="640" cy="120" rx="35" ry="20" fill="none" stroke="rgba(34,197,94,0.09)" stroke-width="1"/>
+            <!-- Indonesia stylized coastline -->
+            <path d="M30,95 Q55,80 80,88 Q110,97 135,82 Q165,65 200,76 Q232,88 265,70 Q298,54 338,66 Q382,78 418,58 Q456,40 492,50 Q526,59 558,44 Q595,32 625,36 Q648,38 665,33" stroke="rgba(74,222,128,0.5)" stroke-width="1.8" fill="none" stroke-dasharray="3,2"/>
+            <path d="M30,102 Q60,118 92,108 Q118,100 140,114 Q162,128 188,120 Q215,112 228,126" stroke="rgba(34,197,94,0.3)" stroke-width="1.2" fill="none" stroke-dasharray="2,3"/>
+            <!-- Water fill areas -->
+            <path d="M30,95 Q55,80 80,88 Q110,97 135,82 Q165,65 200,76 L200,220 L30,220 Z" fill="rgba(0,60,40,0.15)"/>
+            <path d="M265,70 Q298,54 338,66 Q382,78 418,58 L418,220 L265,220 Z" fill="rgba(0,60,40,0.12)"/>
+            <!-- Alert markers with rings -->
+            <circle cx="148" cy="88" r="14" fill="rgba(239,68,68,0.08)" stroke="rgba(239,68,68,0.2)" stroke-width="1"><animate attributeName="r" values="14;18;14" dur="2.5s" repeatCount="indefinite"/></circle>
+            <circle cx="148" cy="88" r="7" fill="#ef4444" opacity="0.9"/>
+            <circle cx="148" cy="88" r="3" fill="white" opacity="0.9"/>
+            <circle cx="285" cy="75" r="10" fill="rgba(234,179,8,0.08)" stroke="rgba(234,179,8,0.2)" stroke-width="1"/>
+            <circle cx="285" cy="75" r="5" fill="#eab308" opacity="0.9"/>
+            <circle cx="380" cy="63" r="12" fill="rgba(239,68,68,0.08)" stroke="rgba(239,68,68,0.2)" stroke-width="1"><animate attributeName="r" values="12;16;12" dur="3s" repeatCount="indefinite"/></circle>
+            <circle cx="380" cy="63" r="6" fill="#ef4444" opacity="0.9"/>
+            <circle cx="380" cy="63" r="2.5" fill="white" opacity="0.9"/>
+            <circle cx="460" cy="52" r="8" fill="rgba(34,197,94,0.1)" stroke="rgba(34,197,94,0.2)" stroke-width="1"/>
+            <circle cx="460" cy="52" r="4" fill="#22c55e" opacity="0.9"/>
+            <circle cx="318" cy="108" r="7" fill="rgba(234,179,8,0.1)"/>
+            <circle cx="318" cy="108" r="4" fill="#eab308" opacity="0.9"/>
+            <circle cx="195" cy="118" r="5" fill="#22c55e" opacity="0.8"/>
+            <circle cx="540" cy="50" r="5" fill="#eab308" opacity="0.8"/>
+            <circle cx="610" cy="40" r="4" fill="#ef4444" opacity="0.8"/>
+            <!-- Coordinate labels -->
+            <text x="10" y="15" font-size="8" fill="rgba(74,222,128,0.35)" font-family="monospace">6°N</text>
+            <text x="10" y="55" font-size="8" fill="rgba(74,222,128,0.35)" font-family="monospace">0°</text>
+            <text x="10" y="95" font-size="8" fill="rgba(74,222,128,0.35)" font-family="monospace">6°S</text>
+            <text x="80" y="210" font-size="8" fill="rgba(74,222,128,0.3)" font-family="monospace">95°E</text>
+            <text x="240" y="210" font-size="8" fill="rgba(74,222,128,0.3)" font-family="monospace">110°E</text>
+            <text x="430" y="210" font-size="8" fill="rgba(74,222,128,0.3)" font-family="monospace">125°E</text>
+            <text x="600" y="210" font-size="8" fill="rgba(74,222,128,0.3)" font-family="monospace">140°E</text>
+            <!-- Legend -->
+            <rect x="10" y="170" width="130" height="38" rx="6" fill="rgba(0,0,0,0.6)" stroke="rgba(74,222,128,0.15)" stroke-width="0.5"/>
+            <circle cx="23" cy="183" r="4" fill="#ef4444"/>
+            <text x="31" y="187" font-size="9" fill="rgba(255,255,255,0.7)" font-family="sans-serif">Awas</text>
+            <circle cx="68" cy="183" r="4" fill="#eab308"/>
+            <text x="76" y="187" font-size="9" fill="rgba(255,255,255,0.7)" font-family="sans-serif">Siaga</text>
+            <circle cx="23" cy="199" r="4" fill="#22c55e"/>
+            <text x="31" y="203" font-size="9" fill="rgba(255,255,255,0.7)" font-family="sans-serif">Waspada</text>
+            <text x="68" y="203" font-size="9" fill="rgba(74,222,128,0.5)" font-family="monospace">WGS84</text>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAGE: PERINGATAN BANJIR -->
+  <div id="page-peringatan">
+    <h2 class="lp-page-title">⚠️ Peringatan Bencana di Wilayahmu</h2>
+    <p class="lp-page-sub">Data terkini status peringatan dini bencana per wilayah — diperbarui 05/06/2026</p>
+    <div class="lp-divider"></div>
+    <div class="warning-search">
+      <input type="text" placeholder="Masukkan nama Desa, Kec, atau Kab/Kota..." id="warning-search-input">
+      <button onclick="showApp()">🔍 Cari di Peta</button>
+    </div>
+    <div class="warning-grid">
+      <div class="warning-card waspada-card">
+        <div class="warning-card-icon">🟢</div>
+        <div class="warning-card-title">WASPADA</div>
+        <div class="warning-card-stat"><span id="cnt-w-prov">0</span> Provinsi</div>
+        <div class="warning-card-stat"><span id="cnt-w-kab">0</span> Kabupaten / Kota</div>
+        <div class="warning-card-stat"><span id="cnt-w-kec">0</span> Kecamatan</div>
+      </div>
+      <div class="warning-card siaga-card">
+        <div class="warning-card-icon">🟡</div>
+        <div class="warning-card-title">SIAGA</div>
+        <div class="warning-card-stat"><span id="cnt-s-prov">0</span> Provinsi</div>
+        <div class="warning-card-stat"><span id="cnt-s-kab">0</span> Kabupaten / Kota</div>
+        <div class="warning-card-stat"><span id="cnt-s-kec">0</span> Kecamatan</div>
+      </div>
+      <div class="warning-card awas-card">
+        <div class="warning-card-icon">🔴</div>
+        <div class="warning-card-title">AWAS</div>
+        <div class="warning-card-stat"><span id="cnt-a-prov">0</span> Provinsi</div>
+        <div class="warning-card-stat"><span id="cnt-a-kab">0</span> Kabupaten / Kota</div>
+        <div class="warning-card-stat"><span id="cnt-a-kec">0</span> Kecamatan</div>
+      </div>
+    </div>
+    <button class="btn-peta" onclick="showApp()" style="margin-top:8px;">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 16l4.553-2.276A1 1 0 0021 19.764V8.236a1 1 0 00-.553-.894L15 5m0 18V5m0 0L9 7"/></svg>
+      Lihat di Peta Interaktif
+    </button>
+  </div>
+
+  <!-- PAGE: LAPOR KEJADIAN -->
+  <div id="page-laporan">
+    <h2 class="lp-page-title">📋 Lapor Kejadian Bencana</h2>
+    <p class="lp-page-sub">Laporkan kejadian bencana alam yang Anda alami atau saksikan — saat kejadian maupun pasca kejadian</p>
+    <div class="lp-divider"></div>
+
+    <!-- STEP INDICATOR -->
+    <div id="lapor-steps" style="display:flex;gap:0;margin-bottom:32px;align-items:center;">
+      <div class="lapor-step active" id="step-ind-1">
+        <div class="step-num">1</div>
+        <div class="step-label">Lokasi</div>
+      </div>
+      <div class="step-line"></div>
+      <div class="lapor-step" id="step-ind-2">
+        <div class="step-num">2</div>
+        <div class="step-label">Detail Kejadian</div>
+      </div>
+      <div class="step-line"></div>
+      <div class="lapor-step" id="step-ind-3">
+        <div class="step-num">3</div>
+        <div class="step-label">Dokumentasi</div>
+      </div>
+      <div class="step-line"></div>
+      <div class="lapor-step" id="step-ind-4">
+        <div class="step-num">4</div>
+        <div class="step-label">Konfirmasi</div>
+      </div>
+    </div>
+
+    <!-- STEP 1: LOKASI -->
+    <div id="lapor-step-1" class="lapor-card">
+      <h3 style="font-size:16px;font-weight:700;margin-bottom:4px;">📍 Langkah 1 — Lokasi Kejadian</h3>
+      <p style="font-size:13px;color:#64748b;margin-bottom:20px;">Isi informasi lokasi dimana kejadian bencana berlangsung</p>
+      <div class="lapor-form-grid">
+        <div class="lapor-form-group">
+          <label class="lapor-label">Provinsi <span class="req">*</span></label>
+          <select class="lapor-input" id="f-provinsi" onchange="loadKabupaten()">
+            <option value="">— Pilih Provinsi —</option>
+            <option>Jawa Tengah</option><option>Jawa Timur</option><option>Jawa Barat</option>
+            <option>DI Yogyakarta</option><option>DKI Jakarta</option><option>Banten</option>
+            <option>Sumatera Utara</option><option>Sumatera Selatan</option><option>Sumatera Barat</option>
+            <option>Kalimantan Selatan</option><option>Kalimantan Tengah</option><option>Kalimantan Timur</option>
+            <option>Sulawesi Selatan</option><option>Sulawesi Tengah</option><option>Papua</option>
+            <option>Nusa Tenggara Barat</option><option>Nusa Tenggara Timur</option>
+          </select>
+        </div>
+        <div class="lapor-form-group">
+          <label class="lapor-label">Kabupaten / Kota <span class="req">*</span></label>
+          <input type="text" class="lapor-input" id="f-kabupaten" placeholder="Contoh: Kab. Sleman">
+        </div>
+        <div class="lapor-form-group">
+          <label class="lapor-label">Kecamatan <span class="req">*</span></label>
+          <input type="text" class="lapor-input" id="f-kecamatan" placeholder="Contoh: Depok">
+        </div>
+        <div class="lapor-form-group">
+          <label class="lapor-label">Desa / Kelurahan</label>
+          <input type="text" class="lapor-input" id="f-desa" placeholder="Contoh: Condongcatur">
+        </div>
+        <div class="lapor-form-group" style="grid-column:1/-1;">
+          <label class="lapor-label">Alamat / Deskripsi Lokasi</label>
+          <input type="text" class="lapor-input" id="f-alamat" placeholder="Jl. Magelang km 8, dekat jembatan...">
+        </div>
+        <div class="lapor-form-group">
+          <label class="lapor-label">Koordinat Latitude (opsional)</label>
+          <input type="number" step="any" class="lapor-input" id="f-lat" placeholder="-7.7829">
+        </div>
+        <div class="lapor-form-group">
+          <label class="lapor-label">Koordinat Longitude (opsional)</label>
+          <input type="number" step="any" class="lapor-input" id="f-lng" placeholder="110.3670">
+        </div>
+      </div>
+      <div class="lapor-nav">
+        <div></div>
+        <button class="btn-lapor-next" onclick="lapor_next(1)">Lanjut →</button>
+      </div>
+    </div>
+
+    <!-- STEP 2: DETAIL -->
+    <div id="lapor-step-2" class="lapor-card" style="display:none;">
+      <h3 style="font-size:16px;font-weight:700;margin-bottom:4px;">📊 Langkah 2 — Detail Kejadian</h3>
+      <p style="font-size:13px;color:#64748b;margin-bottom:20px;">Informasi mengenai waktu dan kondisi bencana yang terjadi</p>
+      <div class="lapor-form-grid">
+        <div class="lapor-form-group">
+          <label class="lapor-label">Tanggal Kejadian <span class="req">*</span></label>
+          <input type="date" class="lapor-input" id="f-tanggal">
+        </div>
+        <div class="lapor-form-group">
+          <label class="lapor-label">Perkiraan Waktu Kejadian</label>
+          <input type="time" class="lapor-input" id="f-waktu">
+        </div>
+        <div class="lapor-form-group">
+          <label class="lapor-label">Status Bencana Saat Ini <span class="req">*</span></label>
+          <select class="lapor-input" id="f-status">
+            <option value="">— Pilih —</option>
+            <option value="berlangsung">Sedang berlangsung</option>
+            <option value="surut">Sudah mulai surut</option>
+            <option value="selesai">Sudah selesai / kering</option>
+          </select>
+        </div>
+        <div class="lapor-form-group">
+          <label class="lapor-label">Estimasi Tinggi Muka Air / Dampak <span class="req">*</span></label>
+          <select class="lapor-input" id="f-tinggi">
+            <option value="">— Pilih ketinggian —</option>
+            <option value="lutut">&lt; 50 cm (di bawah lutut)</option>
+            <option value="pinggang">50 – 100 cm (lutut–pinggang)</option>
+            <option value="dada">100 – 150 cm (pinggang–dada)</option>
+            <option value="atap">&gt; 150 cm (di atas kepala)</option>
+          </select>
+        </div>
+        <div class="lapor-form-group">
+          <label class="lapor-label">Luas Wilayah Terdampak</label>
+          <select class="lapor-input" id="f-luas">
+            <option value="">— Pilih —</option>
+            <option value="rt">Satu RT / blok kecil</option>
+            <option value="rw">Satu RW / beberapa blok</option>
+            <option value="kelurahan">Satu kelurahan / desa</option>
+            <option value="kecamatan">Satu kecamatan atau lebih</option>
+          </select>
+        </div>
+        <div class="lapor-form-group">
+          <label class="lapor-label">Jumlah KK Terdampak (estimasi)</label>
+          <input type="number" class="lapor-input" id="f-kk" placeholder="Contoh: 50" min="0">
+        </div>
+        <div class="lapor-form-group" style="grid-column:1/-1;">
+          <label class="lapor-label">Keterangan Tambahan</label>
+          <textarea class="lapor-input" id="f-keterangan" rows="3" placeholder="Contoh: Bencana disebabkan hujan deras, terjadi sekitar jam 3 pagi..."></textarea>
+        </div>
+        <div class="lapor-form-group" style="grid-column:1/-1;">
+          <label class="lapor-label" style="margin-bottom:8px;">Fasilitas yang Terdampak</label>
+          <div style="display:flex;flex-wrap:wrap;gap:8px;">
+            <label class="lapor-check"><input type="checkbox" value="rumah" id="fc-rumah"> Rumah warga</label>
+            <label class="lapor-check"><input type="checkbox" value="sekolah" id="fc-sekolah"> Sekolah</label>
+            <label class="lapor-check"><input type="checkbox" value="jalan" id="fc-jalan"> Jalan / jembatan</label>
+            <label class="lapor-check"><input type="checkbox" value="sawah" id="fc-sawah"> Sawah / ladang</label>
+            <label class="lapor-check"><input type="checkbox" value="fasum" id="fc-fasum"> Fasilitas umum</label>
+            <label class="lapor-check"><input type="checkbox" value="kesehatan" id="fc-kesehatan"> Fasilitas kesehatan</label>
+          </div>
+        </div>
+      </div>
+      <div class="lapor-nav">
+        <button class="btn-lapor-back" onclick="lapor_back(2)">← Kembali</button>
+        <button class="btn-lapor-next" onclick="lapor_next(2)">Lanjut →</button>
+      </div>
+    </div>
+
+    <!-- STEP 3: DOKUMENTASI -->
+    <div id="lapor-step-3" class="lapor-card" style="display:none;">
+      <h3 style="font-size:16px;font-weight:700;margin-bottom:4px;">📷 Langkah 3 — Dokumentasi & Kontak</h3>
+      <p style="font-size:13px;color:#64748b;margin-bottom:20px;">Unggah foto dan isi data pelapor (opsional namun sangat membantu)</p>
+      <div class="lapor-form-grid">
+        <div class="lapor-form-group" style="grid-column:1/-1;">
+          <label class="lapor-label">Upload Foto Kejadian (maks. 3 foto, opsional)</label>
+          <div class="lapor-upload-area" id="upload-area" onclick="document.getElementById('f-foto').click()" ondragover="event.preventDefault();this.classList.add('dragover')" ondragleave="this.classList.remove('dragover')" ondrop="handleDrop(event)">
+            <div style="font-size:32px;margin-bottom:8px;">📸</div>
+            <div style="font-size:13px;font-weight:600;color:#0057a8;margin-bottom:4px;">Klik atau seret foto ke sini</div>
+            <div style="font-size:11px;color:#94a3b8;">Format: JPG, PNG, WEBP · Maks. 5 MB per file</div>
+            <input type="file" id="f-foto" accept="image/*" multiple style="display:none" onchange="handleFiles(this.files)">
+          </div>
+          <div id="foto-preview" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;"></div>
+        </div>
+        <div class="lapor-form-group">
+          <label class="lapor-label">Nama Pelapor <span class="req">*</span></label>
+          <input type="text" class="lapor-input" id="f-nama" placeholder="Nama lengkap Anda">
+        </div>
+        <div class="lapor-form-group">
+          <label class="lapor-label">No. Telepon / WhatsApp</label>
+          <input type="tel" class="lapor-input" id="f-telp" placeholder="08xxxxxxxxxx">
+        </div>
+        <div class="lapor-form-group" style="grid-column:1/-1;">
+          <label class="lapor-label">Email (untuk menerima nomor laporan)</label>
+          <input type="email" class="lapor-input" id="f-email" placeholder="nama@email.com">
+        </div>
+        <div class="lapor-form-group" style="grid-column:1/-1;">
+          <label class="lapor-label" style="margin-bottom:8px;">Sumber Informasi</label>
+          <div style="display:flex;flex-wrap:wrap;gap:8px;">
+            <label class="lapor-check"><input type="radio" name="sumber" value="langsung"> Saya mengalami langsung</label>
+            <label class="lapor-check"><input type="radio" name="sumber" value="menyaksikan"> Saya menyaksikan</label>
+            <label class="lapor-check"><input type="radio" name="sumber" value="media_sosial"> Dari media sosial</label>
+            <label class="lapor-check"><input type="radio" name="sumber" value="warga"> Info dari warga</label>
+          </div>
+        </div>
+      </div>
+      <div class="lapor-nav">
+        <button class="btn-lapor-back" onclick="lapor_back(3)">← Kembali</button>
+        <button class="btn-lapor-next" onclick="lapor_next(3)">Tinjau Laporan →</button>
+      </div>
+    </div>
+
+    <!-- STEP 4: KONFIRMASI -->
+    <div id="lapor-step-4" class="lapor-card" style="display:none;">
+      <h3 style="font-size:16px;font-weight:700;margin-bottom:4px;">✅ Langkah 4 — Tinjau & Kirim</h3>
+      <p style="font-size:13px;color:#64748b;margin-bottom:20px;">Periksa kembali data laporan sebelum dikirimkan</p>
+      <div id="lapor-review" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:20px;margin-bottom:20px;font-size:13px;line-height:2;"></div>
+      <div style="background:#fffbeb;border:1px solid #fcd34d;border-radius:10px;padding:14px;margin-bottom:20px;font-size:12px;color:#92600a;">
+        ⚠️ Dengan mengirim laporan ini, Anda menyatakan bahwa informasi yang diberikan adalah benar dan dapat dipertanggungjawabkan sesuai ketentuan yang berlaku.
+      </div>
+      <div class="lapor-nav">
+        <button class="btn-lapor-back" onclick="lapor_back(4)">← Kembali Edit</button>
+        <button class="btn-lapor-submit" onclick="submitLaporan()">📤 Kirim Laporan</button>
+      </div>
+    </div>
+
+    <!-- SUCCESS -->
+    <div id="lapor-success" style="display:none;text-align:center;padding:60px 20px;">
+      <div style="font-size:72px;margin-bottom:16px;">🎉</div>
+      <h2 style="font-size:24px;font-weight:800;color:#0f172a;margin-bottom:8px;">Laporan Berhasil Dikirim!</h2>
+      <p style="font-size:14px;color:#64748b;margin-bottom:24px;">Terima kasih telah melaporkan kejadian bencana. Tim GEOCARE akan segera meneruskan laporan Anda ke instansi terkait.</p>
+      <div style="background:white;border:1px solid #e2e8f0;border-radius:14px;padding:24px;max-width:400px;margin:0 auto 28px;box-shadow:0 2px 12px rgba(0,0,0,0.05);">
+        <div style="font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px;">Nomor Laporan Anda</div>
+        <div style="font-size:22px;font-weight:800;color:#0057a8;letter-spacing:0.05em;" id="nomor-laporan">GC-2026-XXXXX</div>
+        <div style="font-size:12px;color:#94a3b8;margin-top:6px;">Simpan nomor ini untuk pelacakan laporan</div>
+      </div>
+      <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+        <button class="btn-peta" onclick="lapor_reset()">📝 Buat Laporan Baru</button>
+        <button class="btn-peta-outline" onclick="showLandingPage('home')">← Kembali ke Beranda</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAGE: TENTANG -->
+  <div id="page-tentang">
+    <h2 class="lp-page-title">ℹ️ Tentang Dashboard Pencegahan</h2>
+    <p class="lp-page-sub">Informasi umum, metodologi, dan pengelola platform peringatan dini bencana</p>
+    <div class="lp-divider"></div>
+    <div class="about-section">
+      <h3>Informasi Umum</h3>
+      <p style="font-size:14px;color:#374151;line-height:1.7;margin-bottom:14px;">
+        <strong>Dashboard Pencegahan Bencana</strong> adalah portal kebencanaan yang memiliki fungsi mengkompilasi berbagai prediksi <strong>bahaya bencana alam</strong> berdasarkan luaran pengolahan data dari berbagai kementerian dan lembaga. Dashboard dikembangkan sejak tahun <strong>2026</strong> dengan tujuan memberikan informasi peringatan dini kepada pemerintah daerah dan masyarakat.
+      </p>
+      <p style="font-size:14px;color:#374151;line-height:1.7;">
+        Pengembangan mengacu pada panduan <strong>SNI 8840-3:2022 SISTEM PERINGATAN DINI BENCANA</strong>.
+      </p>
+    </div>
+    <div class="about-section" style="background:linear-gradient(135deg,#f0fdf4,#ecfdf5);border-color:#86efac;">
+      <h3 style="color:#166534;">🌿 Tentang GEOCARE</h3>
+      <div style="display:flex;align-items:flex-start;gap:18px;margin-bottom:16px;">
+        <div style="width:60px;height:60px;border-radius:14px;background:linear-gradient(135deg,#1a6b3a,#2d9e5f);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:14px;color:white;flex-shrink:0;letter-spacing:-0.5px;box-shadow:0 4px 14px rgba(26,107,58,0.3);">GC</div>
+        <div>
+          <div style="font-size:16px;font-weight:800;color:#0f172a;margin-bottom:2px;">GEOCARE</div>
+          <div style="font-size:13px;color:#166534;font-weight:600;margin-bottom:10px;">Geospatial Cartography And Remote Sensing for Environmental Care</div>
+          <p style="font-size:14px;color:#374151;line-height:1.75;">
+            GEOCARE adalah kelompok mahasiswa <strong>Jurusan Kartografi dan Penginderaan Jauh Angkatan 2024</strong>, Universitas Gadjah Mada. Kami hadir dengan semangat untuk mengabdikan ilmu geospasial demi keselamatan masyarakat Indonesia — khususnya dalam menghadapi ancaman bencana alam seperti banjir, tanah longsor, dan kekeringan.
+          </p>
+        </div>
+      </div>
+      <p style="font-size:14px;color:#374151;line-height:1.75;margin-bottom:12px;">
+        Dashboard ini dikembangkan sebagai wujud nyata komitmen kami dalam membantu pemerintah dan masyarakat mendapatkan akses informasi kebencanaan yang <strong>akurat, cepat, dan mudah dipahami</strong>. Dengan memanfaatkan teknologi penginderaan jauh dan sistem informasi geografis, kami mengintegrasikan data dari berbagai lembaga nasional ke dalam satu platform terpadu.
+      </p>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:8px;">
+        <span style="padding:5px 14px;border-radius:20px;background:#dcfce7;color:#166534;font-size:12px;font-weight:700;">🎓 Universitas Gadjah Mada</span>
+        <span style="padding:5px 14px;border-radius:20px;background:#dcfce7;color:#166534;font-size:12px;font-weight:700;">🗺️ Kartografi & Penginderaan Jauh</span>
+        <span style="padding:5px 14px;border-radius:20px;background:#dcfce7;color:#166534;font-size:12px;font-weight:700;">📅 Angkatan 2024</span>
+        <span style="padding:5px 14px;border-radius:20px;background:#dcfce7;color:#166534;font-size:12px;font-weight:700;">🚀 Dikembangkan sejak 2026</span>
+      </div>
+    </div>
+    <div class="about-section">
+      <h3>Sumber Data & Mitra</h3>
+      <div class="about-source-grid">
+        <div class="source-item">
+          <div class="source-badge" style="background:#003087;">BNPB</div>
+          <div><div class="source-name">Badan Nasional Penanggulangan Bencana</div><div class="source-sub">Pengelola utama · Inarisk data</div></div>
+        </div>
+        <div class="source-item">
+          <div class="source-badge" style="background:#c0392b;">BMKG</div>
+          <div><div class="source-name">Badan Meteorologi, Klimatologi dan Geofisika</div><div class="source-sub">Signature · Prakiraan cuaca</div></div>
+        </div>
+        <div class="source-item">
+          <div class="source-badge" style="background:#00509d;">PUPR</div>
+          <div><div class="source-name">Kementerian Pekerjaan Umum dan Perumahan Rakyat</div><div class="source-sub">Satgas Banjir · Sihka · Simadu</div></div>
+        </div>
+        <div class="source-item">
+          <div class="source-badge" style="background:#27ae60;">KLHK</div>
+          <div><div class="source-name">Kementerian Lingkungan Hidup dan Kehutanan</div><div class="source-sub">SIGAP · Data tutupan lahan</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="about-section">
+      <h3>Kontak Tim</h3>
+      <p style="font-size:14px;color:#374151;">Email: <a href="mailto:geocare.kartografi24@mail.ugm.ac.id" style="color:#0057a8;font-weight:600;">geocare.kartografi24@mail.ugm.ac.id</a></p>
+    </div>
+  </div>
+
+  <!-- PAGE: WEB TERKAIT -->
+  <div id="page-webterkait">
+    <h2 class="lp-page-title">🌐 Web Terkait</h2>
+    <p class="lp-page-sub">Portal dan sistem informasi dari kementerian dan lembaga mitra</p>
+    <div class="lp-divider"></div>
+    <div class="webterkait-grid">
+      <div class="wt-card" onclick="window.open('https://inarisk.bnpb.go.id','_blank')">
+        <div class="wt-logo" style="background:#003087;">BNPB</div>
+        <div class="wt-name">inaRISK</div>
+        <div class="wt-url">inarisk.bnpb.go.id</div>
+        <div class="wt-desc">Portal penilaian risiko bencana nasional. Menyediakan data risiko, kerentanan, dan kapasitas per wilayah.</div>
+      </div>
+      <div class="wt-card" onclick="window.open('https://www.bmkg.go.id','_blank')">
+        <div class="wt-logo" style="background:#c0392b;">BMKG</div>
+        <div class="wt-name">BMKG — Signature</div>
+        <div class="wt-url">bmkg.go.id</div>
+        <div class="wt-desc">Sistem informasi cuaca berbasis dampak dari Badan Meteorologi Klimatologi dan Geofisika.</div>
+      </div>
+      <div class="wt-card" onclick="window.open('https://sda.pu.go.id','_blank')">
+        <div class="wt-logo" style="background:#00509d;">PUPR</div>
+        <div class="wt-name">Sihka — PUPR</div>
+        <div class="wt-url">sda.pu.go.id</div>
+        <div class="wt-desc">Sistem informasi hidrologi, hidrometeorologi, dan hidrogeologi dari Kementerian PUPR.</div>
+      </div>
+      <div class="wt-card" onclick="window.open('https://bbws-berantas.pu.go.id','_blank')">
+        <div class="wt-logo" style="background:#1a7f5a;">BWS</div>
+        <div class="wt-name">BBWS Bengawan Solo</div>
+        <div class="wt-url">bbws-bengawansolo.pu.go.id</div>
+        <div class="wt-desc">Data status tinggi muka air dan travel time di DAS Bengawan Solo. Update setiap jam.</div>
+      </div>
+      <div class="wt-card" onclick="window.open('https://geoportal.menlhk.go.id','_blank')">
+        <div class="wt-logo" style="background:#27ae60;">KLHK</div>
+        <div class="wt-name">SIGAP — KLHK</div>
+        <div class="wt-url">geoportal.menlhk.go.id</div>
+        <div class="wt-desc">Informasi presentase tutupan lahan dari Kementerian Lingkungan Hidup dan Kehutanan.</div>
+      </div>
+      <div class="wt-card" onclick="window.open('https://simadu.pu.go.id','_blank')">
+        <div class="wt-logo" style="background:#6366f1;">SIM</div>
+        <div class="wt-name">Simadu — PUPR</div>
+        <div class="wt-url">simadu.pu.go.id</div>
+        <div class="wt-desc">Sistem informasi manajemen data banjir terlapor melalui laporan balai besar wilayah sungai.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div style="background:white;border-top:1px solid #e2e8f0;padding:20px 40px;display:flex;align-items:center;justify-content:space-between;font-size:12px;color:#94a3b8;">
+    <div>© 2026 <strong style="color:#1a6b3a;">GEOCARE</strong> — Kartografi &amp; Penginderaan Jauh UGM Angkatan 2024</div>
+    <div style="display:flex;gap:10px;align-items:center;">
+      <span style="padding:3px 10px;border-radius:4px;font-size:10px;font-weight:800;color:white;background:#1a6b3a;">GC</span>
+      <span style="padding:3px 10px;border-radius:4px;font-size:10px;font-weight:800;color:white;background:#003087;">BNPB</span>
+      <span style="padding:3px 10px;border-radius:4px;font-size:10px;font-weight:800;color:white;background:#c0392b;">BMKG</span>
+      <span style="padding:3px 10px;border-radius:4px;font-size:10px;font-weight:800;color:white;background:#00509d;">PUPR</span>
+      <span style="padding:3px 10px;border-radius:4px;font-size:10px;font-weight:800;color:white;background:#27ae60;">KLHK</span>
+    </div>
+  </div>
+</div>
+
+<!-- ======== LOGIN PAGE ======== -->
+<div id="login-page">
+  <div class="login-card">
+    <div class="login-logo">
+      <div class="login-logo-circle" style="background:linear-gradient(135deg,#1a6b3a,#2d9e5f);font-size:12px;letter-spacing:-0.5px;">GC</div>
+    </div>
+    <h2 class="login-title">Dashboard Pencegahan</h2>
+    <p class="login-sub">GEOCARE — Kartografi &amp; Penginderaan Jauh UGM</p>
+    <div class="form-group">
+      <label class="form-label">Username</label>
+      <input type="text" class="form-input" placeholder="Masukkan username" id="login-user" onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Password</label>
+      <input type="password" class="form-input" placeholder="Masukkan password" id="login-pass" onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <button class="btn-login-submit" onclick="doLogin()">Masuk</button>
+    <div class="login-divider">atau</div>
+    <button style="width:100%;padding:11px;background:transparent;border:1.5px solid #e2e8f0;border-radius:8px;font-family:inherit;font-size:13.5px;font-weight:600;cursor:pointer;color:#4a5568;transition:all 0.15s;" onmouseover="this.style.background='#f0f7ff';this.style.borderColor='#0057a8'" onmouseout="this.style.background='transparent';this.style.borderColor='#e2e8f0'" onclick="doGuestLogin()">🌟 Masuk sebagai tamu dengan username apapun</button>
+    <div class="login-back">
+      <a onclick="backToLanding()">← Kembali ke beranda</a>
+    </div>
+  </div>
+</div>
+
+<!-- ======== MAIN APP ======== -->
+<div id="app">
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="topbar-logo" onclick="backToLanding();setTimeout(()=>showLandingPage('tentang'),100);" style="cursor:pointer;" title="Tentang GEOCARE">
+      <div class="topbar-logo-img" style="background:linear-gradient(135deg,#1a6b3a,#2d9e5f);font-size:11px;letter-spacing:-0.5px;">GC</div>
+      <div class="topbar-logo-text">
+        <strong>GEOCARE</strong>
+        Dashboard Pencegahan
+      </div>
+    </div>
+    <button class="topbar-laman" onclick="backToLanding()">Beranda</button>
+    <div class="topbar-center">
+      <div class="topbar-nav">
+        <button class="tnav active" onclick="switchView('map',this)">🗺 Peta Interaktif</button>
+        <button class="tnav" onclick="switchView('laporan',this)">📋 Laporan</button>
+        <button class="tnav" onclick="switchView('data',this)">🗄 Koleksi Data</button>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <span class="topbar-date" id="topbar-date"></span>
+
+      <button class="btn-sm" onclick="downloadPeta()">⬇ Unduh Peta</button>
+      <button class="btn-sm" onclick="backToLanding()">🔒 Keluar</button>
+    </div>
+  </div>
+
+  <!-- BODY -->
+  <div class="app-body" id="app-body">
+
+    <!-- SIDEBAR -->
+    <div class="sidebar" id="sidebar">
+      <!-- Info Potensi Bahaya -->
+      <div class="sidebar-date-bar" onclick="openModal('detail-modal')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        <span>Informasi potensi bahaya tanggal <strong id="sidebar-info-date">05-06-2026</strong></span>
+        <span class="arrow">›</span>
+      </div>
+
+      <!-- Jenis Bencana -->
+      <div class="sidebar-section">
+        <div class="sidebar-title">Jenis Bencana</div>
+        <div class="bencana-list">
+          <button class="bencana-btn selected" onclick="selectBencana('banjir',this)">
+            <div class="bencana-icon" style="background:#e8f4fd;">💧</div>
+            Banjir
+          </button>
+          <button class="bencana-btn" onclick="selectBencana('kekeringan',this)">
+            <div class="bencana-icon" style="background:#fff8e6;">☀️</div>
+            Kekeringan
+          </button>
+          <button class="bencana-btn" onclick="selectBencana('angin',this)">
+            <div class="bencana-icon" style="background:#f0f7ff;">🌪</div>
+            Angin Topan
+          </button>
+          <button class="bencana-btn" onclick="selectBencana('longsor',this)">
+            <div class="bencana-icon" style="background:#f5f0ff;">⛰</div>
+            Tanah Longsor
+          </button>
+          <button class="bencana-btn" onclick="selectBencana('karhutla',this)">
+            <div class="bencana-icon" style="background:#fff0f0;">🔥</div>
+            Kebakaran Hutan dan Lahan
+          </button>
+        </div>
+      </div>
+
+      <!-- Layer -->
+      <div class="sidebar-section">
+        <div class="sidebar-title">Tampilan Layer</div>
+        <div class="layer-row" onclick="toggleLayer(this,'reanalisis')">
+          <span>Reanalisis</span>
+          <div class="toggle-sw on" id="layer-reanalisis"></div>
+        </div>
+        <div class="layer-row" onclick="toggleLayer(this,'signature')">
+          <span>Signature</span>
+          <div class="toggle-sw" id="layer-signature"></div>
+        </div>
+
+      </div>
+
+      <!-- Date -->
+      <div class="sidebar-section">
+        <div class="sidebar-title">Periode Data</div>
+        <div class="date-area">
+          <div class="date-label">Tanggal</div>
+          <input type="date" class="date-input" id="date-picker" value="2026-06-05" onchange="updateDate()">
+        </div>
+      </div>
+
+      <!-- Filter Status -->
+      <div class="sidebar-section">
+        <div class="sidebar-title">Filter Status</div>
+        <button class="sidebar-item active" onclick="filterStatus('all',this)">
+          <span class="sidebar-item-icon">🔵</span>
+          Semua Wilayah
+          <span class="sidebar-item-count" id="cnt-all">—</span>
+        </button>
+        <button class="sidebar-item" onclick="filterStatus('waspada',this)">
+          <span class="sidebar-item-icon">🟢</span>
+          Waspada
+          <span class="sidebar-item-count waspada" id="cnt-waspada">—</span>
+        </button>
+        <button class="sidebar-item" onclick="filterStatus('siaga',this)">
+          <span class="sidebar-item-icon">🟡</span>
+          Siaga
+          <span class="sidebar-item-count siaga" id="cnt-siaga">—</span>
+        </button>
+        <button class="sidebar-item" onclick="filterStatus('awas',this)">
+          <span class="sidebar-item-icon">🔴</span>
+          Awas
+          <span class="sidebar-item-count awas" id="cnt-awas">—</span>
+        </button>
+      </div>
+
+      <!-- Aksi -->
+      <div class="sidebar-section">
+        <div class="sidebar-title">Aksi</div>
+        <button class="sidebar-item" onclick="openModal('detail-modal')">
+          <span class="sidebar-item-icon">ℹ</span>
+          Detail Informasi
+        </button>
+        <button class="sidebar-item" onclick="openModal('guide-modal')">
+          <span class="sidebar-item-icon">📖</span>
+          Panduan Penggunaan
+        </button>
+        <button class="sidebar-item" onclick="openModal('pengelola-modal')">
+          <span class="sidebar-item-icon">🏛</span>
+          Pengelola
+        </button>
+        <button class="sidebar-item" onclick="downloadPeta()">
+          <span class="sidebar-item-icon">⬇</span>
+          Unduh Peta
+        </button>
+
+      </div>
+    </div>
+
+    <!-- MAP VIEW -->
+    <div class="main-content" id="view-map" style="display:block;position:relative;">
+      <div id="map"></div>
+
+      <!-- Search + buttons -->
+      <div class="map-topbar">
+        <div class="search-box">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="2" width="14" height="14"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" class="search-input" placeholder="Cari wilayah, kabupaten, provinsi..." id="map-search" onkeydown="if(event.key==='Enter')searchWilayah(this.value)">
+          <span id="search-clear" style="cursor:pointer;color:#999;font-size:13px;display:none;" onclick="clearSearch()">✕</span>
+        </div>
+        <div class="map-action-btns">
+          <button class="map-btn active" id="btn-analisis" onclick="toggleAnalisis()">
+            📊 Analisis Wilayah
+          </button>
+          <button class="map-btn" onclick="resetMapView()" title="Reset tampilan peta">
+            🏠
+          </button>
+        </div>
+      </div>
+
+      <!-- Legend -->
+      <div class="map-legend">
+        <div class="legend-title">Status Peringatan</div>
+        <div class="legend-item" onclick="filterStatus('awas',null)">
+          <span class="legend-dot dot-awas"></span>
+          Awas
+          <span class="legend-count" style="color:var(--awas);" id="leg-awas">0</span>
+        </div>
+        <div class="legend-item" onclick="filterStatus('siaga',null)">
+          <span class="legend-dot dot-siaga"></span>
+          Siaga
+          <span class="legend-count" style="color:var(--warning-dark);" id="leg-siaga">0</span>
+        </div>
+        <div class="legend-item" onclick="filterStatus('waspada',null)">
+          <span class="legend-dot dot-waspada"></span>
+          Waspada
+          <span class="legend-count" style="color:var(--success);" id="leg-waspada">0</span>
+        </div>
+        <div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);">
+          <div style="font-size:10px;color:var(--text3);" id="legend-date">Tanggal: 05 Juni 2026</div>
+        </div>
+      </div>
+
+      <!-- Info Panel -->
+      <div class="info-panel" id="info-panel">
+        <div class="info-panel-header">
+          <span class="info-panel-title" id="info-bencana-title">Pencegahan Bencana Alam</span>
+          <button class="info-panel-close" onclick="toggleAnalisis()">✕</button>
+        </div>
+        <div class="info-panel-body">
+          <img src="https://dashboardpencegahan.bnpb.go.id/peta/_nuxt/img/warning.6f0db6d.png"
+               style="width:100%;border-radius:8px;margin-bottom:12px;object-fit:cover;max-height:60px;"
+               onerror="this.style.display='none'">
+          <div class="info-tabs">
+            <button class="info-tab active" onclick="switchInfoTab('summary',this)">Ringkasan</button>
+            <button class="info-tab" onclick="switchInfoTab('provinsi',this)">Provinsi</button>
+            <button class="info-tab" onclick="switchInfoTab('kabupaten',this)">Kab/Kota</button>
+          </div>
+
+          <!-- Summary tab -->
+          <div id="tab-summary">
+            <div class="stat-grid">
+              <div class="stat-card waspada">
+                <div class="stat-val waspada" id="panel-waspada">0</div>
+                <div class="stat-lbl">Waspada</div>
+              </div>
+              <div class="stat-card siaga">
+                <div class="stat-val siaga" id="panel-siaga">0</div>
+                <div class="stat-lbl">Siaga</div>
+              </div>
+              <div class="stat-card awas">
+                <div class="stat-val awas" id="panel-awas">0</div>
+                <div class="stat-lbl">Awas</div>
+              </div>
+            </div>
+            <div class="aw-section-title">Daftar Wilayah Terdampak</div>
+            <div class="area-list" id="area-list-summary"></div>
+            <div id="load-more-btn" style="display:none;margin-top:8px;">
+              <button class="btn-secondary" style="width:100%;font-size:12px;padding:7px;" onclick="loadMoreAreas()">Muat Lebih Banyak</button>
+            </div>
+            <button class="btn-primary" style="width:100%;font-size:12px;padding:8px;margin-top:10px;" onclick="downloadData()">
+              ⬇ Unduh Data
+            </button>
+          </div>
+
+          <!-- Provinsi tab -->
+          <div id="tab-provinsi" style="display:none;">
+            <div class="aw-section-title" style="margin-bottom:8px;">Rekapitulasi per Provinsi</div>
+            <div class="area-list" id="area-list-provinsi"></div>
+          </div>
+
+          <!-- Kabupaten tab -->
+          <div id="tab-kabupaten" style="display:none;">
+            <div class="aw-section-title" style="margin-bottom:8px;">Rekapitulasi per Kabupaten/Kota</div>
+            <div class="area-list" id="area-list-kabupaten"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Status bar bottom (like real site) -->
+      <div class="status-bar">
+        <div class="status-card sc-waspada">
+          <div class="status-card-icon">⚠️</div>
+          <div class="status-card-info">
+            <div class="status-card-nums">
+              <span id="sb-prov-waspada">0</span> Provinsi &nbsp;|&nbsp;
+              <span id="sb-kab-waspada">0</span> Kabupaten/Kota &nbsp;|&nbsp;
+              <span id="sb-kec-waspada">0</span> Kecamatan
+            </div>
+            <div class="status-card-label">Waspada</div>
+          </div>
+        </div>
+        <div class="status-card sc-siaga">
+          <div class="status-card-icon">🔶</div>
+          <div class="status-card-info">
+            <div class="status-card-nums">
+              <span id="sb-prov-siaga">0</span> Provinsi &nbsp;|&nbsp;
+              <span id="sb-kab-siaga">0</span> Kabupaten/Kota &nbsp;|&nbsp;
+              <span id="sb-kec-siaga">0</span> Kecamatan
+            </div>
+            <div class="status-card-label">Siaga</div>
+          </div>
+        </div>
+        <div class="status-card sc-awas">
+          <div class="status-card-icon">🔴</div>
+          <div class="status-card-info">
+            <div class="status-card-nums">
+              <span id="sb-prov-awas">0</span> Provinsi &nbsp;|&nbsp;
+              <span id="sb-kab-awas">0</span> Kabupaten/Kota &nbsp;|&nbsp;
+              <span id="sb-kec-awas">0</span> Kecamatan
+            </div>
+            <div class="status-card-label">Awas</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom bar -->
+      <div class="bottom-panel">
+        <div>© 2026 Direktorat Peringatan Dini</div>
+        <div id="progress-area" style="display:none;min-width:200px;">
+          <div style="font-size:11px;margin-bottom:2px;">Progress Download <span id="progress-bytes">0 Bytes</span></div>
+          <div class="progress-bar-wrap"><div class="progress-bar" id="progress-bar"></div></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text3);">
+          Dikembangkan oleh:
+          <div class="bottom-logos">
+            <span class="org-badge" style="background:#003087;">BNPB</span>
+            <span class="org-badge" style="background:#00509d;">BMKG</span>
+            <span class="org-badge" style="background:#c0392b;">PUPR</span>
+            <span class="org-badge" style="background:#27ae60;">KLHK</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- LAPORAN VIEW -->
+    <div id="view-laporan" style="display:none;flex:1;padding:24px;overflow-y:auto;flex-direction:column;">
+      <div class="page-header">
+        <h2 class="page-title">📋 Laporan Peringatan Dini</h2>
+        <p class="page-sub">Rekapitulasi data peringatan bencana — <span id="laporan-date">05 Juni 2026</span></p>
+      </div>
+      <div id="laporan-content"></div>
+    </div>
+
+    <!-- DATA VIEW -->
+    <div id="view-data" style="display:none;padding:24px;overflow-y:auto;flex:1;flex-direction:column;">
+      <div class="page-header">
+        <h2 class="page-title">🗄 Koleksi Data</h2>
+        <p class="page-sub">Data historis peringatan bencana berdasarkan tanggal dan jenis bencana</p>
+      </div>
+      <div class="data-filters">
+        <select class="filter-select" onchange="filterDataTable(this.value)">
+          <option value="all">Semua Status</option>
+          <option value="awas">Awas</option>
+          <option value="siaga">Siaga</option>
+          <option value="waspada">Waspada</option>
+        </select>
+        <select class="filter-select" id="filter-bencana-data" onchange="filterDataBencana(this.value)">
+          <option value="all">Semua Bencana</option>
+          <option value="banjir">Banjir</option>
+          <option value="kekeringan">Kekeringan</option>
+          <option value="longsor">Tanah Longsor</option>
+          <option value="angin">Angin Topan</option>
+          <option value="karhutla">Kebakaran Hutan dan Lahan</option>
+        </select>
+        <button class="btn-primary" style="padding:7px 16px;font-size:12px;" onclick="downloadData()">⬇ Unduh CSV</button>
+      </div>
+      <div class="data-table-wrap">
+        <table class="data-table" id="data-table">
+          <thead>
+            <tr>
+              <th>No</th><th>Provinsi</th><th>Kab/Kota</th><th>Kecamatan</th>
+              <th>Jenis Bencana</th><th>Status</th><th>Tanggal</th>
+            </tr>
+          </thead>
+          <tbody id="data-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </div><!-- end app-body -->
+</div><!-- end app -->
+
+<!-- ======== MODALS ======== -->
+
+<!-- Share Modal -->
+<div class="modal-overlay" id="share-modal">
+  <div class="modal" style="max-width:420px;">
+    <div class="modal-header">
+      <h3 class="modal-title">📤 Bagikan Informasi</h3>
+      <button class="modal-close" onclick="closeModal('share-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:13px;color:var(--text2);margin-bottom:14px;">Salin tautan atau bagikan informasi peringatan dini ini:</p>
+      <div style="background:#f8fafc;border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-size:12px;color:var(--text3);word-break:break-all;margin-bottom:14px;" id="share-url">
+        https://dashboardpencegahan.bnpb.go.id/peta?date=2026-06-05&bencana=banjir
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn-primary" style="flex:1;" onclick="copyLink()">📋 Salin Tautan</button>
+        <button class="btn-secondary" style="flex:1;" onclick="closeModal('share-modal')">Batal</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Detail Modal -->
+<div class="modal-overlay" id="detail-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 class="modal-title">ℹ Detail Informasi</h3>
+      <button class="modal-close" onclick="closeModal('detail-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-section-title">Informasi Dataset</div>
+      <div class="modal-row"><span class="modal-row-label">Sumber Data</span><span class="modal-row-value">BNPB, BMKG, Kementerian PUPR, KLHK</span></div>
+      <div class="modal-row"><span class="modal-row-label">Metode</span><span class="modal-row-value">Reanalisis + Prediksi Numerik</span></div>
+      <div class="modal-row"><span class="modal-row-label">Resolusi</span><span class="modal-row-value">Kecamatan (tingkat 4)</span></div>
+      <div class="modal-row"><span class="modal-row-label">Pembaruan</span><span class="modal-row-value">Setiap hari pukul 07:00 WIB</span></div>
+      <div class="modal-row"><span class="modal-row-label">Proyeksi</span><span class="modal-row-value">WGS 84 (EPSG:4326)</span></div>
+      <div class="modal-row"><span class="modal-row-label">Format</span><span class="modal-row-value">GeoJSON, CSV, SHP</span></div>
+      <div class="modal-row" style="border:none;"><span class="modal-row-label">Kontak</span><span class="modal-row-value">peringatandini@bnpb.go.id</span></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeModal('detail-modal')">Tutup</button>
+    </div>
+  </div>
+</div>
+
+<!-- Guide Modal -->
+<div class="modal-overlay" id="guide-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 class="modal-title">📖 Panduan Penggunaan</h3>
+      <button class="modal-close" onclick="closeModal('guide-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="guide-step">
+        <div class="guide-num">1</div>
+        <div class="guide-text"><strong>Pilih Jenis Bencana</strong> dari menu di kiri. Tersedia: Banjir, Kekeringan, Angin Topan, Tanah Longsor, dan Karhutla.</div>
+      </div>
+      <div class="guide-step">
+        <div class="guide-num">2</div>
+        <div class="guide-text"><strong>Atur Tanggal</strong> untuk melihat data peringatan pada periode tertentu menggunakan date picker di sidebar.</div>
+      </div>
+      <div class="guide-step">
+        <div class="guide-num">3</div>
+        <div class="guide-text"><strong>Aktifkan Layer</strong> Reanalisis, Signature, atau Satgas untuk memunculkan lapisan data berbeda di peta.</div>
+      </div>
+      <div class="guide-step">
+        <div class="guide-num">4</div>
+        <div class="guide-text"><strong>Klik titik</strong> pada peta untuk melihat detail status peringatan suatu kecamatan beserta informasi lengkap.</div>
+      </div>
+      <div class="guide-step">
+        <div class="guide-num">5</div>
+        <div class="guide-text"><strong>Gunakan Filter Status</strong> (Waspada / Siaga / Awas) untuk menyaring tampilan sesuai tingkat risiko yang diinginkan.</div>
+      </div>
+      <div class="guide-step">
+        <div class="guide-num">6</div>
+        <div class="guide-text"><strong>Lihat Analisis Wilayah</strong> pada panel kanan untuk melihat ringkasan, data per provinsi, dan per kabupaten/kota.</div>
+      </div>
+      <div class="guide-step">
+        <div class="guide-num">7</div>
+        <div class="guide-text"><strong>Unduh Peta</strong> untuk menyimpan data peringatan saat ini dalam format CSV yang dapat dibuka di spreadsheet.</div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-primary" onclick="closeModal('guide-modal')">Mengerti</button>
+    </div>
+  </div>
+</div>
+
+<!-- Pengelola Modal -->
+<div class="modal-overlay" id="pengelola-modal">
+  <div class="modal" style="max-width:480px;">
+    <div class="modal-header">
+      <h3 class="modal-title">🏛 Pengelola</h3>
+      <button class="modal-close" onclick="closeModal('pengelola-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-section-title">Dikembangkan oleh:</div>
+      <div class="org-card" style="margin-bottom:0;">
+        <div class="org-logo-box" style="background:linear-gradient(135deg,#1a6b3a,#2d9e5f);font-size:11px;letter-spacing:-0.5px;">GC</div>
+        <div>
+          <div class="org-name">GEOCARE</div>
+          <div class="org-sub">Geospatial Cartography &amp; Remote Sensing for Environmental Care — Kartografi &amp; Penginderaan Jauh UGM 2024</div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeModal('pengelola-modal')">Tutup</button>
+    </div>
+  </div>
+</div>
+
+<!-- Area Modal -->
+<div class="modal-overlay" id="area-modal">
+  <div class="modal" style="max-width:420px;">
+    <div class="modal-header">
+      <h3 class="modal-title" id="area-modal-title">Detail Wilayah</h3>
+      <button class="modal-close" onclick="closeModal('area-modal')">✕</button>
+    </div>
+    <div class="modal-body" id="area-modal-body"></div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeModal('area-modal')">Tutup</button>
+      <button class="btn-primary" onclick="downloadData();closeModal('area-modal')">⬇ Unduh Data</button>
+    </div>
+  </div>
+</div>
+
+<!-- Map Welcome Modal -->
+<div class="modal-overlay" id="map-welcome-modal">
+  <div class="modal" style="max-width:440px;">
+    <div class="modal-header">
+      <h3 class="modal-title">🗺️ Selamat Datang di Peta Interaktif</h3>
+      <button class="modal-close" onclick="closeModal('map-welcome-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:13.5px;color:var(--text2);line-height:1.7;margin-bottom:16px;">
+        Peta ini menampilkan <strong>potensi bahaya bencana alam</strong> secara real-time berdasarkan data dari BNPB, BMKG, PUPR, dan KLHK.
+      </p>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px;">
+        <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:#fff5f5;border-radius:8px;border:1px solid #fed7d7;">
+          <span style="width:12px;height:12px;border-radius:50%;background:#e53e3e;flex-shrink:0;display:inline-block;"></span>
+          <span style="font-size:13px;color:var(--text2);"><strong>Awas</strong> — Potensi tinggi, segera evakuasi</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:#fffaf0;border-radius:8px;border:1px solid #fbd38d;">
+          <span style="width:12px;height:12px;border-radius:50%;background:#f6a800;flex-shrink:0;display:inline-block;"></span>
+          <span style="font-size:13px;color:var(--text2);"><strong>Siaga</strong> — Potensi sedang, siapkan diri</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:#f0fff4;border-radius:8px;border:1px solid #9ae6b4;">
+          <span style="width:12px;height:12px;border-radius:50%;background:#38a169;flex-shrink:0;display:inline-block;"></span>
+          <span style="font-size:13px;color:var(--text2);"><strong>Waspada</strong> — Potensi rendah, pantau terus</span>
+        </div>
+      </div>
+      <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;padding:10px 14px;font-size:12px;color:#0369a1;">
+        💡 Klik titik pada peta untuk melihat detail wilayah. Gunakan pencarian untuk menemukan lokasi tertentu.
+      </div>
+    </div>
+    <div class="modal-footer">
+      <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text3);cursor:pointer;margin-right:auto;">
+        <input type="checkbox" id="dont-show-again" onchange="if(this.checked)sessionStorage.setItem('mapWelcomeShown','permanent')">
+        Jangan tampilkan lagi
+      </label>
+      <button class="btn-primary" onclick="closeModal('map-welcome-modal')">Mengerti</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast">✔ Tersalin!</div>
+
+
+<!-- ======== CHATBOT ======== -->
+<button id="chatbot-fab" onclick="toggleChat()" title="Tanya Asisten BNPB">
+  💬
+  <span class="fab-badge"></span>
+</button>
+
+<div id="chatbot-window">
+  <div class="chat-header">
+    <div class="chat-avatar">🤖</div>
+    <div class="chat-header-info">
+      <div class="chat-header-name">Asisten BNPB</div>
+      <div class="chat-header-status"><span class="chat-online-dot"></span> Online · Siap membantu</div>
+    </div>
+    <button class="chat-close" onclick="toggleChat()">✕</button>
+  </div>
+  <div class="chat-messages" id="chat-messages"></div>
+  <div class="chat-suggestions" id="chat-suggestions"></div>
+  <div class="chat-input-area">
+    <input type="text" class="chat-input" id="chat-input" placeholder="Ketik pertanyaan..." onkeydown="if(event.key==='Enter')sendChat()">
+    <button class="chat-send" onclick="sendChat()">➤</button>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// DATA BENCANA BASE (semua titik potensial)
+// ============================================================
+const DATA_BASE = [
+  // Banjir
+  {id:1,provinsi:'Jawa Tengah',kabupaten:'Demak',kecamatan:'Wedung',bencana:'banjir',status:'awas',lat:-6.897,lng:110.657},
+  {id:2,provinsi:'Jawa Tengah',kabupaten:'Kudus',kecamatan:'Undaan',bencana:'banjir',status:'awas',lat:-6.961,lng:110.921},
+  {id:3,provinsi:'Jawa Tengah',kabupaten:'Grobogan',kecamatan:'Gubug',bencana:'banjir',status:'siaga',lat:-7.082,lng:110.753},
+  {id:4,provinsi:'Jawa Timur',kabupaten:'Lamongan',kecamatan:'Glagah',bencana:'banjir',status:'waspada',lat:-7.095,lng:112.301},
+  {id:5,provinsi:'Jawa Timur',kabupaten:'Bojonegoro',kecamatan:'Kanor',bencana:'banjir',status:'siaga',lat:-7.075,lng:112.011},
+  {id:6,provinsi:'Jawa Barat',kabupaten:'Bandung',kecamatan:'Baleendah',bencana:'banjir',status:'awas',lat:-7.013,lng:107.592},
+  {id:7,provinsi:'Jawa Barat',kabupaten:'Bekasi',kecamatan:'Muaragembong',bencana:'banjir',status:'siaga',lat:-6.027,lng:107.143},
+  {id:8,provinsi:'DKI Jakarta',kabupaten:'Jakarta Utara',kecamatan:'Penjaringan',bencana:'banjir',status:'waspada',lat:-6.133,lng:106.773},
+  {id:9,provinsi:'Banten',kabupaten:'Lebak',kecamatan:'Rangkasbitung',bencana:'banjir',status:'awas',lat:-6.359,lng:106.251},
+  {id:10,provinsi:'Sulawesi Selatan',kabupaten:'Wajo',kecamatan:'Tempe',bencana:'banjir',status:'siaga',lat:-3.977,lng:120.009},
+  {id:11,provinsi:'Sulawesi Selatan',kabupaten:'Bone',kecamatan:'Awangpone',bencana:'banjir',status:'waspada',lat:-4.534,lng:120.333},
+  {id:12,provinsi:'Kalimantan Selatan',kabupaten:'Banjar',kecamatan:'Aluh-Aluh',bencana:'banjir',status:'awas',lat:-3.479,lng:114.784},
+  {id:13,provinsi:'Kalimantan Selatan',kabupaten:'HSS',kecamatan:'Kandangan',bencana:'banjir',status:'siaga',lat:-2.791,lng:115.265},
+  {id:14,provinsi:'Sumatera Selatan',kabupaten:'OKI',kecamatan:'Kayuagung',bencana:'banjir',status:'waspada',lat:-3.388,lng:105.261},
+  {id:15,provinsi:'Aceh',kabupaten:'Aceh Tamiang',kecamatan:'Karang Baru',bencana:'banjir',status:'siaga',lat:4.198,lng:97.988},
+  {id:24,provinsi:'Jawa Tengah',kabupaten:'Pati',kecamatan:'Jakenan',bencana:'banjir',status:'siaga',lat:-6.875,lng:111.085},
+  {id:25,provinsi:'Jawa Barat',kabupaten:'Karawang',kecamatan:'Batujaya',bencana:'banjir',status:'waspada',lat:-6.097,lng:107.271},
+  {id:26,provinsi:'Sumatera Utara',kabupaten:'Deli Serdang',kecamatan:'Sunggal',bencana:'banjir',status:'waspada',lat:3.566,lng:98.638},
+  {id:31,provinsi:'Jawa Tengah',kabupaten:'Semarang',kecamatan:'Genuk',bencana:'banjir',status:'siaga',lat:-6.975,lng:110.449},
+  {id:32,provinsi:'Jawa Timur',kabupaten:'Gresik',kecamatan:'Bungah',bencana:'banjir',status:'waspada',lat:-7.093,lng:112.617},
+  {id:33,provinsi:'Kalimantan Tengah',kabupaten:'Kapuas',kecamatan:'Selat',bencana:'banjir',status:'awas',lat:-3.018,lng:114.318},
+  {id:34,provinsi:'Sumatera Selatan',kabupaten:'Musi Banyuasin',kecamatan:'Sungai Keruh',bencana:'banjir',status:'siaga',lat:-2.811,lng:103.975},
+  {id:35,provinsi:'Jawa Barat',kabupaten:'Indramayu',kecamatan:'Kandanghaur',bencana:'banjir',status:'awas',lat:-6.406,lng:108.087},
+  {id:36,provinsi:'Jawa Tengah',kabupaten:'Brebes',kecamatan:'Losari',bencana:'banjir',status:'siaga',lat:-6.858,lng:108.801},
+  {id:37,provinsi:'Sulawesi Tengah',kabupaten:'Sigi',kecamatan:'Dolo',bencana:'banjir',status:'waspada',lat:-0.931,lng:119.883},
+  {id:38,provinsi:'Papua',kabupaten:'Jayapura',kecamatan:'Abepura',bencana:'banjir',status:'siaga',lat:-2.592,lng:140.672},
+  {id:43,provinsi:'Jawa Tengah',kabupaten:'Klaten',kecamatan:'Bayat',bencana:'banjir',status:'waspada',lat:-7.757,lng:110.683},
+  {id:44,provinsi:'Jawa Timur',kabupaten:'Nganjuk',kecamatan:'Bagor',bencana:'banjir',status:'siaga',lat:-7.603,lng:111.869},
+  {id:45,provinsi:'Sulawesi Tenggara',kabupaten:'Konawe',kecamatan:'Unaaha',bencana:'banjir',status:'awas',lat:-3.987,lng:122.115},
+  {id:46,provinsi:'Kalimantan Timur',kabupaten:'Kutai Kartanegara',kecamatan:'Tenggarong',bencana:'banjir',status:'waspada',lat:-0.433,lng:117.133},
+  // Kekeringan
+  {id:16,provinsi:'Jawa Tengah',kabupaten:'Blora',kecamatan:'Tunjungan',bencana:'kekeringan',status:'awas',lat:-7.066,lng:111.399},
+  {id:17,provinsi:'NTT',kabupaten:'Kupang',kecamatan:'Kupang Barat',bencana:'kekeringan',status:'awas',lat:-10.193,lng:123.599},
+  {id:18,provinsi:'NTB',kabupaten:'Sumbawa',kecamatan:'Unter Iwes',bencana:'kekeringan',status:'siaga',lat:-8.485,lng:117.422},
+  {id:27,provinsi:'NTT',kabupaten:'TTU',kecamatan:'Kota Kefamenanu',bencana:'kekeringan',status:'waspada',lat:-9.466,lng:124.478},
+  {id:39,provinsi:'Jawa Timur',kabupaten:'Tuban',kecamatan:'Merakurak',bencana:'kekeringan',status:'siaga',lat:-6.944,lng:111.721},
+  {id:47,provinsi:'NTT',kabupaten:'Sumba Timur',kecamatan:'Waingapu',bencana:'kekeringan',status:'awas',lat:-9.660,lng:120.265},
+  {id:48,provinsi:'NTB',kabupaten:'Lombok Tengah',kecamatan:'Pujut',bencana:'kekeringan',status:'waspada',lat:-8.821,lng:116.267},
+  // Longsor
+  {id:19,provinsi:'Jawa Barat',kabupaten:'Bogor',kecamatan:'Cisarua',bencana:'longsor',status:'siaga',lat:-6.700,lng:106.936},
+  {id:20,provinsi:'Jawa Tengah',kabupaten:'Banjarnegara',kecamatan:'Kalibening',bencana:'longsor',status:'awas',lat:-7.361,lng:109.704},
+  {id:28,provinsi:'Sulawesi Utara',kabupaten:'Minahasa',kecamatan:'Tondano',bencana:'longsor',status:'waspada',lat:1.306,lng:124.903},
+  {id:40,provinsi:'Sumatera Barat',kabupaten:'Agam',kecamatan:'Matur',bencana:'longsor',status:'siaga',lat:-0.200,lng:100.115},
+  {id:49,provinsi:'Jawa Barat',kabupaten:'Cianjur',kecamatan:'Cugenang',bencana:'longsor',status:'awas',lat:-6.823,lng:107.104},
+  {id:50,provinsi:'Sulawesi Selatan',kabupaten:'Toraja Utara',kecamatan:'Rantepao',bencana:'longsor',status:'siaga',lat:-2.966,lng:119.899},
+  // Angin Topan
+  {id:21,provinsi:'Jawa Timur',kabupaten:'Malang',kecamatan:'Pujon',bencana:'angin',status:'waspada',lat:-7.877,lng:112.507},
+  {id:29,provinsi:'Jawa Tengah',kabupaten:'Wonogiri',kecamatan:'Pracimantoro',bencana:'angin',status:'siaga',lat:-8.007,lng:110.965},
+  {id:41,provinsi:'Jawa Barat',kabupaten:'Garut',kecamatan:'Bayongbong',bencana:'angin',status:'waspada',lat:-7.202,lng:107.867},
+  {id:51,provinsi:'Jawa Tengah',kabupaten:'Temanggung',kecamatan:'Kedu',bencana:'angin',status:'awas',lat:-7.369,lng:110.019},
+  // Karhutla
+  {id:22,provinsi:'Kalimantan Tengah',kabupaten:'Pulang Pisau',kecamatan:'Pandih Batu',bencana:'karhutla',status:'awas',lat:-3.018,lng:114.118},
+  {id:23,provinsi:'Riau',kabupaten:'Pelalawan',kecamatan:'Langgam',bencana:'karhutla',status:'siaga',lat:0.234,lng:101.839},
+  {id:30,provinsi:'Kalimantan Barat',kabupaten:'Ketapang',kecamatan:'Sandai',bencana:'karhutla',status:'siaga',lat:-1.068,lng:110.012},
+  {id:42,provinsi:'Sumatera Selatan',kabupaten:'Ogan Ilir',kecamatan:'Pemulutan',bencana:'karhutla',status:'awas',lat:-3.188,lng:104.811},
+  {id:52,provinsi:'Kalimantan Selatan',kabupaten:'Tapin',kecamatan:'Binuang',bencana:'karhutla',status:'waspada',lat:-3.227,lng:115.201},
+  {id:53,provinsi:'Jambi',kabupaten:'Muaro Jambi',kecamatan:'Kumpeh',bencana:'karhutla',status:'siaga',lat:-1.574,lng:103.671},
+];
+
+// ============================================================
+// SEEDED RANDOM — data berbeda per tanggal, konsisten bila
+// tanggal sama, minimal 6 titik banjir agar peta tidak kosong
+// ============================================================
+function seededRand(seed) {
+  var x = Math.sin(seed + 1) * 10000;
+  return x - Math.floor(x);
+}
+
+function getDataForDate(dateStr) {
+  var d = new Date(dateStr + 'T00:00:00');
+  var seed = d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate();
+  var result = [];
+
+  DATA_BASE.forEach(function(item, i) {
+    // ~80% chance each point appears on any given day
+    var r = seededRand(seed * 7 + i * 13);
+    if (r > 0.20) {
+      // Possibly shift status
+      var rStatus = seededRand(seed * 3 + i * 17);
+      var newStatus = item.status;
+      if (rStatus < 0.10) {
+        newStatus = item.status === 'waspada' ? 'siaga' : item.status === 'siaga' ? 'awas' : 'awas';
+      } else if (rStatus < 0.20) {
+        newStatus = item.status === 'awas' ? 'siaga' : item.status === 'siaga' ? 'waspada' : 'waspada';
+      }
+      result.push(Object.assign({}, item, { status: newStatus }));
+    }
+  });
+
+  // Pastikan minimal 6 titik banjir tersedia
+  var banjirCount = result.filter(function(x) { return x.bencana === 'banjir'; }).length;
+  if (banjirCount < 6) {
+    DATA_BASE.filter(function(x) { return x.bencana === 'banjir'; }).slice(0, 8).forEach(function(item) {
+      if (!result.find(function(r) { return r.id === item.id; })) {
+        result.push(Object.assign({}, item));
+      }
+    });
+  }
+  return result;
+}
+
+// Active DATA for current date
+var DATA = [];
+
+// ============================================================
+// LAYER CONFIG — berbeda warna & ikon tiap layer
+// ============================================================
+var LAYER_COLORS = {
+  reanalisis: { fill: '#0057a8', border: '#003d7a', label: 'Reanalisis BMKG' },
+  signature:  { fill: '#9b59b6', border: '#7d3c98', label: 'Signature' },
+  satgas:     { fill: '#e67e22', border: '#ca6f1e', label: 'Satgas Banjir' },
+};
+
+var currentBencana = 'banjir';
+var currentFilter  = 'all';
+var currentLayers  = { reanalisis: true, signature: false, satgas: false };
+var map, markerLayer, bufferLayer;
+var infoPanelOpen  = true;
+var areaShowCount  = 8;
+
+// ============================================================
+// HISTORY / TOMBOL BACK — pushState setiap perubahan halaman
+// ============================================================
+window.addEventListener('popstate', function(e) {
+  var state = e.state || { page: 'landing-home' };
+  _applyState(state);
+});
+
+function _applyState(state) {
+  var page = (state && state.page) || 'landing-home';
+  if (page === 'app') {
+    document.getElementById('landing').style.display = 'none';
+    document.getElementById('login-page').classList.remove('active');
+    document.getElementById('app').classList.add('active');
+    updateTopbarDate();
+    if (!map) setTimeout(initMap, 150); else map.invalidateSize();
+    setTimeout(function() {
+      if (!sessionStorage.getItem('mapWelcomeShown')) {
+        openModal('map-welcome-modal');
+        sessionStorage.setItem('mapWelcomeShown', '1');
+      }
+    }, 600);
+  } else if (page === 'login') {
+    document.getElementById('landing').style.display = 'none';
+    document.getElementById('app').classList.remove('active');
+    document.getElementById('login-page').classList.add('active');
+    setTimeout(function() { document.getElementById('login-user').focus(); }, 200);
+  } else {
+    document.getElementById('login-page').classList.remove('active');
+    document.getElementById('app').classList.remove('active');
+    document.getElementById('landing').style.display = 'flex';
+    var sub = page.replace('landing-', '');
+    _showLandingPageInternal(sub === 'home' ? 'home' : sub);
+  }
+}
+
+// ============================================================
+// DATE UTILS
+// ============================================================
+function getTodayStr() {
+  var now = new Date();
+  var y = now.getFullYear();
+  var m = String(now.getMonth() + 1).padStart(2, '0');
+  var d = String(now.getDate()).padStart(2, '0');
+  return y + '-' + m + '-' + d;
+}
+
+function updateTopbarDate() {
+  var now = new Date();
+  document.getElementById('topbar-date').textContent =
+    now.toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric', month: 'long', year: 'numeric' });
+}
+
+function updateSidebarDate(val) {
+  var d = new Date(val + 'T00:00:00');
+  var day   = String(d.getDate()).padStart(2, '0');
+  var month = String(d.getMonth() + 1).padStart(2, '0');
+  var year  = d.getFullYear();
+  document.getElementById('sidebar-info-date').textContent = day + '-' + month + '-' + year;
+}
+
+// ============================================================
+// NAVIGATION (dengan history.pushState)
+// ============================================================
+function showLogin() {
+  history.pushState({ page: 'login' }, 'Login');
+  document.getElementById('landing').style.display = 'none';
+  document.getElementById('login-page').classList.add('active');
+  setTimeout(function() { document.getElementById('login-user').focus(); }, 200);
+}
+
+function doGuestLogin() {
+  showApp();
+}
+
+function doLogin() {
+  var u = document.getElementById('login-user').value.trim();
+  var p = document.getElementById('login-pass').value;
+  if (!u || !p) { showToast('Isi username dan password!', 'error'); return; }
+  showToast('Login berhasil! Selamat datang, ' + u + '!', 'success');
+  setTimeout(showApp, 900);
+}
+
+function backToLanding() {
+  history.pushState({ page: 'landing-home' }, 'Laman Utama');
+  document.getElementById('landing').style.display = 'flex';
+  document.getElementById('login-page').classList.remove('active');
+  document.getElementById('app').classList.remove('active');
+  _showLandingPageInternal('home');
+}
+
+function showApp() {
+  history.pushState({ page: 'app' }, 'Dashboard Pencegahan');
+  document.getElementById('landing').style.display = 'none';
+  document.getElementById('login-page').classList.remove('active');
+  document.getElementById('app').classList.add('active');
+  updateTopbarDate();
+
+  var today = getTodayStr();
+  var picker = document.getElementById('date-picker');
+  if (!picker._userChanged) {
+    picker.value = today;
+    DATA = getDataForDate(today);
+    updateSidebarDate(today);
+    var dObj = new Date(today + 'T00:00:00');
+    document.getElementById('legend-date').textContent =
+      'Tanggal: ' + dObj.toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
+  }
+  _refreshBanjirCounts();
+  setTimeout(initMap, 150);
+  setTimeout(function() {
+    if (!sessionStorage.getItem('mapWelcomeShown')) {
+      openModal('map-welcome-modal');
+      sessionStorage.setItem('mapWelcomeShown', '1');
+    }
+  }, 600);
+}
+
+function _refreshBanjirCounts() {
+  var banjir = DATA.filter(function(d) { return d.bencana === 'banjir'; });
+  document.getElementById('cnt-all').textContent    = banjir.length;
+  document.getElementById('cnt-awas').textContent   = banjir.filter(function(d) { return d.status === 'awas'; }).length;
+  document.getElementById('cnt-siaga').textContent  = banjir.filter(function(d) { return d.status === 'siaga'; }).length;
+  document.getElementById('cnt-waspada').textContent= banjir.filter(function(d) { return d.status === 'waspada'; }).length;
+}
+
+// ============================================================
+// LANDING PAGE NAVIGATION (dengan history.pushState)
+// ============================================================
+function showLandingPage(page) {
+  history.pushState({ page: 'landing-' + page }, page);
+  _showLandingPageInternal(page);
+}
+
+function _showLandingPageInternal(page) {
+  var pages = ['peringatan', 'laporan', 'tentang', 'webterkait'];
+  var hero  = document.getElementById('hero-section');
+  pages.forEach(function(p) {
+    document.getElementById('page-' + p).classList.remove('lp-active');
+  });
+  document.querySelectorAll('.lp-nav-link').forEach(function(el) { el.classList.remove('lp-active-link'); });
+  hero.classList.remove('lp-hidden');
+
+  if (page === 'home') {
+    document.getElementById('nav-home').classList.add('lp-active-link');
+  } else {
+    hero.classList.add('lp-hidden');
+    document.getElementById('page-' + page).classList.add('lp-active');
+    var navEl = document.getElementById('nav-' + page);
+    if (navEl) navEl.classList.add('lp-active-link');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (page === 'peringatan') updateWarningCounts();
+    if (page === 'laporan')    renderLpCalendar();
+  }
+}
+
+function updateWarningCounts() {
+  var today = getTodayStr();
+  var todayData = getDataForDate(today);
+  var banjir  = todayData.filter(function(d) { return d.bencana === 'banjir'; });
+  var waspada = banjir.filter(function(d) { return d.status === 'waspada'; });
+  var siaga   = banjir.filter(function(d) { return d.status === 'siaga'; });
+  var awas    = banjir.filter(function(d) { return d.status === 'awas'; });
+
+  function uniqProv(arr) { return [...new Set(arr.map(function(d) { return d.provinsi; }))].length; }
+  function uniqKab(arr)  { return [...new Set(arr.map(function(d) { return d.kabupaten; }))].length; }
+
+  document.getElementById('cnt-w-prov').textContent = uniqProv(waspada);
+  document.getElementById('cnt-w-kab').textContent  = uniqKab(waspada);
+  document.getElementById('cnt-w-kec').textContent  = waspada.length;
+  document.getElementById('cnt-s-prov').textContent = uniqProv(siaga);
+  document.getElementById('cnt-s-kab').textContent  = uniqKab(siaga);
+  document.getElementById('cnt-s-kec').textContent  = siaga.length;
+  document.getElementById('cnt-a-prov').textContent = uniqProv(awas);
+  document.getElementById('cnt-a-kab').textContent  = uniqKab(awas);
+  document.getElementById('cnt-a-kec').textContent  = awas.length;
+}
+
+var lpCalYear  = new Date().getFullYear();
+var lpCalMonth = new Date().getMonth();
+var LP_MONTHS  = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+
+function renderLpCalendar() {
+  document.getElementById('lp-cal-title').textContent = LP_MONTHS[lpCalMonth] + ' ' + lpCalYear;
+  var grid = document.getElementById('lp-cal-grid');
+  var days = grid.querySelectorAll('.lp-cal-day-head');
+  grid.innerHTML = '';
+  days.forEach(function(d) { grid.appendChild(d.cloneNode(true)); });
+
+  var firstDay = new Date(lpCalYear, lpCalMonth, 1).getDay();
+  var offset   = (firstDay === 0) ? 6 : firstDay - 1;
+  for (var i = 0; i < offset; i++) {
+    var el = document.createElement('div');
+    el.className = 'lp-cal-day empty';
+    grid.appendChild(el);
+  }
+
+  var daysInMonth = new Date(lpCalYear, lpCalMonth + 1, 0).getDate();
+  var today = new Date();
+  for (var dd = 1; dd <= daysInMonth; dd++) {
+    var el = document.createElement('div');
+    el.className = 'lp-cal-day';
+    if (dd === today.getDate() && lpCalMonth === today.getMonth() && lpCalYear === today.getFullYear())
+      el.classList.add('today');
+    el.textContent = dd;
+    el.title = 'Klik untuk lapor ' + dd + ' ' + LP_MONTHS[lpCalMonth];
+    (function(day) { el.onclick = function() { showLogin(); }; })(dd);
+    grid.appendChild(el);
+  }
+}
+
+function lpCalNav(dir) {
+  lpCalMonth += dir;
+  if (lpCalMonth < 0)  { lpCalMonth = 11; lpCalYear--; }
+  if (lpCalMonth > 11) { lpCalMonth = 0;  lpCalYear++; }
+  renderLpCalendar();
+}
+
+function switchView(view, btn) {
+  document.querySelectorAll('.tnav').forEach(function(b) { b.classList.remove('active'); });
+  if (btn) btn.classList.add('active');
+  document.getElementById('view-map').style.display     = 'none';
+  document.getElementById('view-laporan').style.display = 'none';
+  document.getElementById('view-data').style.display    = 'none';
+  if (view === 'map') {
+    document.getElementById('view-map').style.display = 'block';
+    if (!map) setTimeout(initMap, 150); else map.invalidateSize();
+  } else if (view === 'laporan') {
+    document.getElementById('view-laporan').style.display = 'flex';
+    buildLaporan();
+  } else if (view === 'data') {
+    document.getElementById('view-data').style.display = 'flex';
+    buildDataTable('all', 'all');
+  }
+}
+
+// ============================================================
+// MAP — inisialisasi + buffer 1 km + layer berbeda
+// ============================================================
+function initMap() {
+  if (map) { map.invalidateSize(); renderMarkers(); return; }
+  map = L.map('map', { zoomControl: true, attributionControl: true }).setView([-2.5, 118], 5);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    maxZoom: 18
+  }).addTo(map);
+  markerLayer = L.layerGroup().addTo(map);
+  bufferLayer = L.layerGroup().addTo(map);
+  renderMarkers();
+}
+
+function getColor(status) {
+  if (status === 'awas')   return '#e53e3e';
+  if (status === 'siaga')  return '#f6a800';
+  return '#38a169';
+}
+
+// Ikon berbeda untuk setiap layer
+function makeIcon(d) {
+  var color = getColor(d.status);
+
+  if (currentLayers.satgas) {
+    // Satgas: bentuk berlian (rotasi 45°) — warna oranye border merah/kuning/hijau
+    return L.divIcon({
+      className: '',
+      html: '<div style="width:16px;height:16px;background:' + LAYER_COLORS.satgas.fill + ';border:2.5px solid ' + color + ';transform:rotate(45deg);box-shadow:0 1px 5px rgba(0,0,0,0.45);border-radius:2px;"></div>',
+      iconSize: [16, 16],
+      iconAnchor: [8, 8]
+    });
+  }
+
+  if (currentLayers.signature) {
+    // Signature: segitiga ungu dengan lingkaran status di tengah
+    return L.divIcon({
+      className: '',
+      html: '<div style="position:relative;width:20px;height:20px;">' +
+            '<div style="width:0;height:0;border-left:10px solid transparent;border-right:10px solid transparent;border-bottom:18px solid ' + LAYER_COLORS.signature.fill + ';position:absolute;top:0;left:0;filter:drop-shadow(0 1px 3px rgba(0,0,0,0.4));"></div>' +
+            '<div style="width:8px;height:8px;border-radius:50%;background:' + color + ';border:1.5px solid white;position:absolute;top:7px;left:6px;"></div>' +
+            '</div>',
+      iconSize: [20, 20],
+      iconAnchor: [10, 18]
+    });
+  }
+
+  // Reanalisis BMKG (default): lingkaran dengan border biru
+  return L.divIcon({
+    className: '',
+    html: '<div style="width:14px;height:14px;border-radius:50%;background:' + color + ';border:2.5px solid ' + LAYER_COLORS.reanalisis.fill + ';box-shadow:0 1px 5px rgba(0,0,0,0.35);"></div>',
+    iconSize: [14, 14],
+    iconAnchor: [7, 7]
+  });
+}
+
+function renderMarkers() {
+  if (!map) return;
+  markerLayer.clearLayers();
+  bufferLayer.clearLayers();
+
+  var filtered = DATA.filter(function(d) {
+    if (d.bencana !== currentBencana) return false;
+    if (currentFilter !== 'all' && d.status !== currentFilter) return false;
+    return true;
+  });
+
+  // Label layer aktif (priority: satgas > signature > reanalisis)
+  var activeLayerKey = currentLayers.satgas ? 'satgas' : (currentLayers.signature ? 'signature' : 'reanalisis');
+  var layerLabel     = LAYER_COLORS[activeLayerKey].label;
+
+  filtered.forEach(function(d) {
+    var color = getColor(d.status);
+    var icon  = makeIcon(d);
+
+    // Marker
+    var m = L.marker([d.lat, d.lng], { icon: icon }).addTo(markerLayer);
+    m.bindPopup(
+      '<div style="font-family:\'Plus Jakarta Sans\',sans-serif;min-width:200px;padding:2px 0;">' +
+        '<div style="font-weight:700;font-size:14px;margin-bottom:4px;">' + d.kecamatan + '</div>' +
+        '<div style="font-size:12px;color:#666;margin-bottom:8px;">' + d.kabupaten + ' · ' + d.provinsi + '</div>' +
+        '<span style="background:' + color + ';color:white;padding:3px 10px;border-radius:10px;font-size:11px;font-weight:700;text-transform:uppercase;">' + d.status + '</span>' +
+        '<div style="font-size:11px;color:#888;margin-top:6px;text-transform:capitalize;">📡 ' + layerLabel + ' · ' + d.bencana + '</div>' +
+      '</div>'
+    );
+    m.on('click', (function(dd) { return function() { showAreaModal(dd); }; })(d));
+
+    // Buffer 1 km (lingkaran radius 1000 m)
+    L.circle([d.lat, d.lng], {
+      radius: 5000,
+      color: color,
+      fillColor: color,
+      fillOpacity: 0.08,
+      weight: 1.5,
+      dashArray: '5,5',
+      opacity: 0.5
+    }).addTo(bufferLayer).bindTooltip('Buffer 1 km — ' + d.kecamatan, { sticky: true });
+  });
+
+  updateCounts(filtered);
+
+  // Update legend border color
+  var legend = document.querySelector('.map-legend');
+  if (legend) legend.style.borderTop = '3px solid ' + LAYER_COLORS[activeLayerKey].fill;
+}
+
+function updateCounts(filtered) {
+  var awas    = filtered.filter(function(d) { return d.status === 'awas'; });
+  var siaga   = filtered.filter(function(d) { return d.status === 'siaga'; });
+  var waspada = filtered.filter(function(d) { return d.status === 'waspada'; });
+
+  document.getElementById('cnt-all').textContent     = filtered.length;
+  document.getElementById('cnt-awas').textContent    = awas.length;
+  document.getElementById('cnt-siaga').textContent   = siaga.length;
+  document.getElementById('cnt-waspada').textContent = waspada.length;
+  document.getElementById('leg-awas').textContent    = awas.length;
+  document.getElementById('leg-siaga').textContent   = siaga.length;
+  document.getElementById('leg-waspada').textContent = waspada.length;
+  document.getElementById('panel-awas').textContent  = awas.length;
+  document.getElementById('panel-siaga').textContent = siaga.length;
+  document.getElementById('panel-waspada').textContent = waspada.length;
+
+  function getUniq(arr, key) { return [...new Set(arr.map(function(d) { return d[key]; }))].length; }
+  ['awas', 'siaga', 'waspada'].forEach(function(s) {
+    var arr = filtered.filter(function(d) { return d.status === s; });
+    document.getElementById('sb-prov-' + s).textContent = getUniq(arr, 'provinsi');
+    document.getElementById('sb-kab-'  + s).textContent = getUniq(arr, 'kabupaten');
+    document.getElementById('sb-kec-'  + s).textContent = arr.length;
+  });
+
+  buildAreaList(filtered);
+}
+
+function buildAreaList(filtered) {
+  var sorted = [...filtered].sort(function(a, b) {
+    var ord = { awas: 0, siaga: 1, waspada: 2 };
+    return ord[a.status] - ord[b.status];
+  });
+  areaShowCount = 8;
+  renderAreaSummary(sorted);
+
+  var byProv = {};
+  filtered.forEach(function(d) { byProv[d.provinsi] = byProv[d.provinsi] || []; byProv[d.provinsi].push(d); });
+  var provArr = Object.entries(byProv).sort(function(a, b) { return b[1].length - a[1].length; });
+  document.getElementById('area-list-provinsi').innerHTML =
+    provArr.map(function(entry) {
+      var prov = entry[0], items = entry[1];
+      var a = items.filter(function(x) { return x.status === 'awas'; }).length;
+      var s = items.filter(function(x) { return x.status === 'siaga'; }).length;
+      var worst = a > 0 ? 'awas' : s > 0 ? 'siaga' : 'waspada';
+      return '<div class="area-item" onclick="filterByProv(\'' + prov + '\')">' +
+               '<span class="area-badge badge-' + worst + '">' + worst + '</span>' +
+               '<div><div class="area-name">' + prov + '</div><div class="area-kec">' + items.length + ' kecamatan</div></div>' +
+             '</div>';
+    }).join('') || '<div style="font-size:12px;color:var(--text3);padding:10px;text-align:center;">Tidak ada data...</div>';
+
+  var byKab = {};
+  filtered.forEach(function(d) { byKab[d.kabupaten] = byKab[d.kabupaten] || []; byKab[d.kabupaten].push(d); });
+  var kabArr = Object.entries(byKab).sort(function(a, b) { return b[1].length - a[1].length; });
+  document.getElementById('area-list-kabupaten').innerHTML =
+    kabArr.map(function(entry) {
+      var kab = entry[0], items = entry[1];
+      var a = items.filter(function(x) { return x.status === 'awas'; }).length;
+      var s = items.filter(function(x) { return x.status === 'siaga'; }).length;
+      var worst = a > 0 ? 'awas' : s > 0 ? 'siaga' : 'waspada';
+      return '<div class="area-item">' +
+               '<span class="area-badge badge-' + worst + '">' + worst + '</span>' +
+               '<div><div class="area-name">' + kab + '</div><div class="area-kec">' + items[0].provinsi + ' · ' + items.length + ' kec</div></div>' +
+             '</div>';
+    }).join('') || '<div style="font-size:12px;color:var(--text3);padding:10px;text-align:center;">Tidak ada data...</div>';
+}
+
+function renderAreaSummary(sorted) {
+  var items = sorted.slice(0, areaShowCount);
+  document.getElementById('area-list-summary').innerHTML =
+    items.map(function(d) {
+      return '<div class="area-item" onclick="flyTo(' + d.lat + ',' + d.lng + ')">' +
+               '<span class="area-badge badge-' + d.status + '">' + d.status + '</span>' +
+               '<div><div class="area-name">' + d.kecamatan + '</div><div class="area-kec">' + d.kabupaten + '</div></div>' +
+             '</div>';
+    }).join('') || '<div style="font-size:12px;color:var(--text3);padding:10px;text-align:center;">Tidak ada data...</div>';
+  document.getElementById('load-more-btn').style.display = sorted.length > areaShowCount ? 'block' : 'none';
+  document.getElementById('load-more-btn')._sorted = sorted;
+}
+
+function loadMoreAreas() {
+  areaShowCount += 8;
+  var sorted = document.getElementById('load-more-btn')._sorted || [];
+  renderAreaSummary(sorted);
+}
+
+function flyTo(lat, lng) {
+  if (!map) return;
+  map.flyTo([lat, lng], 11, { duration: 1.2 });
+}
+
+function filterByProv(prov) {
+  switchInfoTab('summary', document.querySelector('.info-tab'));
+  var filtered = DATA.filter(function(d) { return d.bencana === currentBencana && d.provinsi === prov; });
+  var sorted   = [...filtered].sort(function(a, b) {
+    var o = { awas: 0, siaga: 1, waspada: 2 };
+    return o[a.status] - o[b.status];
+  });
+  renderAreaSummary(sorted);
+}
+
+function resetMapView() {
+  if (!map) return;
+  map.flyTo([-2.5, 118], 5, { duration: 1 });
+}
+
+// ============================================================
+// SIDEBAR ACTIONS
+// ============================================================
+function selectBencana(b, btn) {
+  document.querySelectorAll('.bencana-btn').forEach(function(x) { x.classList.remove('selected'); });
+  btn.classList.add('selected');
+  currentBencana = b;
+  var names = { banjir: 'Banjir', kekeringan: 'Kekeringan', angin: 'Angin Topan', longsor: 'Tanah Longsor', karhutla: 'Karhutla' };
+  document.getElementById('info-bencana-title').textContent = 'Pencegahan Bencana ' + names[b];
+  currentFilter = 'all';
+  document.querySelectorAll('.sidebar-item').forEach(function(x) { x.classList.remove('active'); });
+  document.querySelector('.sidebar-item').classList.add('active');
+  renderMarkers();
+}
+
+function filterStatus(s, btn) {
+  if (btn) {
+    document.querySelectorAll('.sidebar-item').forEach(function(x) { x.classList.remove('active'); });
+    btn.classList.add('active');
+  }
+  currentFilter = s;
+  renderMarkers();
+}
+
+function toggleLayer(el, name) {
+  var sw = document.getElementById('layer-' + name);
+  currentLayers[name] = !currentLayers[name];
+  sw.classList.toggle('on', currentLayers[name]);
+  // Warnai baris layer yang aktif
+  var row = sw.closest('.layer-row');
+  if (row) {
+    var bg = { reanalisis: 'rgba(0,87,168,0.07)', signature: 'rgba(155,89,182,0.07)', satgas: 'rgba(230,126,34,0.07)' };
+    row.style.background = currentLayers[name] ? (bg[name] || '') : '';
+  }
+  var labels = { reanalisis: 'Reanalisis (BMKG)', signature: 'Signature', satgas: 'Satgas Banjir' };
+  showToast('Layer ' + labels[name] + ' ' + (currentLayers[name] ? 'diaktifkan' : 'dinonaktifkan'), 'success');
+  renderMarkers();
+}
+
+function updateDate() {
+  var val = document.getElementById('date-picker').value;
+  if (!val) return;
+  document.getElementById('date-picker')._userChanged = true;
+  DATA = getDataForDate(val);
+  var dObj = new Date(val + 'T00:00:00');
+  var str  = dObj.toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
+  document.getElementById('legend-date').textContent  = 'Tanggal: ' + str;
+  document.getElementById('laporan-date').textContent = str;
+  updateSidebarDate(val);
+  document.getElementById('share-url').textContent =
+    'https://dashboardpencegahan.bnpb.go.id/peta?date=' + val + '&bencana=' + currentBencana;
+  _refreshBanjirCounts();
+  renderMarkers();
+  showToast('Data diperbarui: ' + str + ' (' + DATA.filter(function(d) { return d.bencana === 'banjir'; }).length + ' titik banjir)', 'success');
+}
+
+function toggleAnalisis() {
+  infoPanelOpen = !infoPanelOpen;
+  document.getElementById('info-panel').classList.toggle('hidden', !infoPanelOpen);
+  document.getElementById('btn-analisis').classList.toggle('active', infoPanelOpen);
+}
+
+function switchInfoTab(tab, btn) {
+  document.querySelectorAll('.info-tab').forEach(function(x) { x.classList.remove('active'); });
+  if (btn) btn.classList.add('active');
+  ['summary', 'provinsi', 'kabupaten'].forEach(function(t) {
+    document.getElementById('tab-' + t).style.display = t === tab ? 'block' : 'none';
+  });
+}
+
+function searchWilayahLocal(val) {
+  var clear = document.getElementById('search-clear');
+  clear.style.display = val ? 'inline' : 'none';
+  if (!val) { renderMarkers(); return; }
+  var q = val.toLowerCase();
+  markerLayer.clearLayers();
+  bufferLayer.clearLayers();
+  var filtered = DATA.filter(function(d) {
+    return d.bencana === currentBencana &&
+      (d.kecamatan.toLowerCase().includes(q) ||
+       d.kabupaten.toLowerCase().includes(q) ||
+       d.provinsi.toLowerCase().includes(q));
+  });
+  filtered.forEach(function(d) {
+    var color = getColor(d.status);
+    var icon  = makeIcon(d);
+    var m = L.marker([d.lat, d.lng], { icon: icon }).addTo(markerLayer);
+    m.bindPopup('<div style="font-family:\'Plus Jakarta Sans\',sans-serif;min-width:180px;"><b>' + d.kecamatan + '</b><br><small>' + d.kabupaten + ' · ' + d.provinsi + '</small><br><span style="background:' + color + ';color:white;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;">' + d.status.toUpperCase() + '</span></div>');
+    m.on('click', (function(dd) { return function() { showAreaModal(dd); }; })(d));
+    L.circle([d.lat, d.lng], { radius: 5000, color: color, fillColor: color, fillOpacity: 0.08, weight: 1.5, dashArray: '5,5', opacity: 0.5 }).addTo(bufferLayer);
+  });
+  updateCounts(filtered);
+  if (filtered.length >= 1) map.flyTo([filtered[0].lat, filtered[0].lng], 11, { duration: 1 });
+}
+
+function searchWilayah(val) {
+  if (!val) return;
+  var q = val.toLowerCase();
+  var filtered = DATA.filter(function(d) {
+    return d.bencana === currentBencana &&
+      (d.kecamatan.toLowerCase().includes(q) ||
+       d.kabupaten.toLowerCase().includes(q) ||
+       d.provinsi.toLowerCase().includes(q));
+  });
+  if (filtered.length >= 1) {
+    map.flyTo([filtered[0].lat, filtered[0].lng], 11, { duration: 1 });
+    return;
+  }
+  showToast('Mencari lokasi "' + val + '"...', '');
+  fetch('https://nominatim.openstreetmap.org/search?q=' + encodeURIComponent(val + ', Indonesia') + '&format=json&limit=1')
+    .then(function(res) { return res.json(); })
+    .then(function(results) {
+      if (results && results.length > 0) {
+        var r = results[0];
+        var lat = parseFloat(r.lat);
+        var lng = parseFloat(r.lon);
+        map.flyTo([lat, lng], 12, { duration: 1.2 });
+        if (window._geocodeMarker) map.removeLayer(window._geocodeMarker);
+        window._geocodeMarker = L.marker([lat, lng], {
+          icon: L.divIcon({
+            className: '',
+            html: '<div style="background:#0057a8;color:white;padding:4px 10px;border-radius:8px;font-size:11px;font-weight:700;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,0.3);">📍 ' + r.display_name.split(',')[0] + '</div>',
+            iconAnchor: [0, 0]
+          })
+        }).addTo(map).bindPopup('<b>' + r.display_name.split(',').slice(0,3).join(', ') + '</b><br><small>Tidak ada data bencana di titik ini</small>').openPopup();
+        showToast('Ditemukan: ' + r.display_name.split(',')[0], 'success');
+      } else {
+        showToast('Lokasi "' + val + '" tidak ditemukan', 'error');
+      }
+    })
+    .catch(function() { showToast('Gagal mencari lokasi', 'error'); });
+}
+
+function clearSearch() {
+  document.getElementById('map-search').value = '';
+  document.getElementById('search-clear').style.display = 'none';
+  if (window._geocodeMarker) { map.removeLayer(window._geocodeMarker); window._geocodeMarker = null; }
+  renderMarkers();
+}
+
+// ============================================================
+// MODALS
+// ============================================================
+function openModal(id)  { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+document.addEventListener('click', function(e) {
+  document.querySelectorAll('.modal-overlay.open').forEach(function(o) {
+    if (e.target === o) o.classList.remove('open');
+  });
+});
+
+function showAreaModal(d) {
+  var color = getColor(d.status);
+  var activeLayerKey = currentLayers.satgas ? 'satgas' : (currentLayers.signature ? 'signature' : 'reanalisis');
+  document.getElementById('area-modal-title').textContent = d.kecamatan + ', ' + d.kabupaten;
+  document.getElementById('area-modal-body').innerHTML =
+    '<div style="text-align:center;margin-bottom:16px;">' +
+      '<span style="background:' + color + ';color:white;padding:6px 22px;border-radius:20px;font-size:14px;font-weight:700;text-transform:uppercase;">' + d.status + '</span>' +
+    '</div>' +
+    '<div class="modal-row"><span class="modal-row-label">Provinsi</span><span class="modal-row-value">' + d.provinsi + '</span></div>' +
+    '<div class="modal-row"><span class="modal-row-label">Kab/Kota</span><span class="modal-row-value">' + d.kabupaten + '</span></div>' +
+    '<div class="modal-row"><span class="modal-row-label">Kecamatan</span><span class="modal-row-value"><b>' + d.kecamatan + '</b></span></div>' +
+    '<div class="modal-row"><span class="modal-row-label">Jenis Bencana</span><span class="modal-row-value" style="text-transform:capitalize;">' + d.bencana + '</span></div>' +
+    '<div class="modal-row"><span class="modal-row-label">Koordinat</span><span class="modal-row-value">' + d.lat.toFixed(4) + '°, ' + d.lng.toFixed(4) + '°</span></div>' +
+    '<div class="modal-row"><span class="modal-row-label">Buffer Zona</span><span class="modal-row-value">1 km (radius)</span></div>' +
+    '<div class="modal-row" style="border:none;"><span class="modal-row-label">Sumber Layer</span><span class="modal-row-value">' + LAYER_COLORS[activeLayerKey].label + '</span></div>';
+  openModal('area-modal');
+}
+
+// ============================================================
+// LAPORAN
+// ============================================================
+function buildLaporan() {
+  var banjir  = DATA.filter(function(d) { return d.bencana === 'banjir'; });
+  var awas    = banjir.filter(function(d) { return d.status === 'awas'; });
+  var siaga   = banjir.filter(function(d) { return d.status === 'siaga'; });
+  var waspada = banjir.filter(function(d) { return d.status === 'waspada'; });
+  document.getElementById('laporan-content').innerHTML =
+    '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:24px;">' +
+      '<div class="stat-card waspada" style="padding:18px;text-align:center;"><div class="stat-val waspada">' + waspada.length + '</div><div class="stat-lbl">Waspada</div></div>' +
+      '<div class="stat-card siaga"   style="padding:18px;text-align:center;"><div class="stat-val siaga">'   + siaga.length   + '</div><div class="stat-lbl">Siaga</div></div>' +
+      '<div class="stat-card awas"    style="padding:18px;text-align:center;"><div class="stat-val awas">'    + awas.length    + '</div><div class="stat-lbl">Awas</div></div>' +
+    '</div>' +
+    (awas.length > 0 ? '<div style="margin-bottom:18px;"><h3 style="font-size:14px;font-weight:700;margin-bottom:10px;color:var(--awas);">🔴 Status Awas (' + awas.length + ' Kecamatan)</h3><div class="data-table-wrap"><table class="data-table"><thead><tr><th>Provinsi</th><th>Kab/Kota</th><th>Kecamatan</th></tr></thead><tbody>' + awas.map(function(d) { return '<tr><td>' + d.provinsi + '</td><td>' + d.kabupaten + '</td><td><b>' + d.kecamatan + '</b></td></tr>'; }).join('') + '</tbody></table></div></div>' : '') +
+    (siaga.length > 0 ? '<div style="margin-bottom:18px;"><h3 style="font-size:14px;font-weight:700;margin-bottom:10px;color:var(--warning-dark);">🟡 Status Siaga (' + siaga.length + ' Kecamatan)</h3><div class="data-table-wrap"><table class="data-table"><thead><tr><th>Provinsi</th><th>Kab/Kota</th><th>Kecamatan</th></tr></thead><tbody>' + siaga.map(function(d) { return '<tr><td>' + d.provinsi + '</td><td>' + d.kabupaten + '</td><td>' + d.kecamatan + '</td></tr>'; }).join('') + '</tbody></table></div></div>' : '') +
+    (waspada.length > 0 ? '<div style="margin-bottom:18px;"><h3 style="font-size:14px;font-weight:700;margin-bottom:10px;color:var(--success);">🟢 Status Waspada (' + waspada.length + ' Kecamatan)</h3><div class="data-table-wrap"><table class="data-table"><thead><tr><th>Provinsi</th><th>Kab/Kota</th><th>Kecamatan</th></tr></thead><tbody>' + waspada.map(function(d) { return '<tr><td>' + d.provinsi + '</td><td>' + d.kabupaten + '</td><td>' + d.kecamatan + '</td></tr>'; }).join('') + '</tbody></table></div></div>' : '') +
+    '<div style="margin-top:8px;display:flex;gap:8px;"><button class="btn-primary" onclick="downloadData()">⬇ Unduh Laporan CSV</button></div>';
+}
+
+// ============================================================
+// DATA TABLE
+// ============================================================
+var dtStatusFilter  = 'all';
+var dtBencanaFilter = 'all';
+
+function filterDataTable(val)  { dtStatusFilter  = val; buildDataTable(dtStatusFilter, dtBencanaFilter); }
+function filterDataBencana(val){ dtBencanaFilter = val; buildDataTable(dtStatusFilter, dtBencanaFilter); }
+
+function buildDataTable(sf, bf) {
+  var filtered = DATA.filter(function(d) {
+    return (sf === 'all' || d.status === sf) && (bf === 'all' || d.bencana === bf);
+  });
+  var colors = { awas: '#fed7d7', siaga: '#fbd38d', waspada: '#9ae6b4' };
+  var tc     = { awas: '#9b2c2c', siaga: '#7b341e', waspada: '#1a4731' };
+  var dateVal = document.getElementById('date-picker').value;
+  document.getElementById('data-tbody').innerHTML =
+    filtered.map(function(d, i) {
+      return '<tr><td>' + (i + 1) + '</td><td>' + d.provinsi + '</td><td>' + d.kabupaten + '</td><td>' + d.kecamatan + '</td>' +
+             '<td style="text-transform:capitalize;">' + d.bencana + '</td>' +
+             '<td><span class="status-badge" style="background:' + colors[d.status] + ';color:' + tc[d.status] + ';">' + d.status.toUpperCase() + '</span></td>' +
+             '<td>' + dateVal + '</td></tr>';
+    }).join('') || '<tr><td colspan="7" style="text-align:center;color:var(--text3);padding:24px;">Tidak ada data ditemukan.</td></tr>';
+}
+
+// ============================================================
+// DOWNLOAD
+// ============================================================
+function downloadPeta() {
+  var prog  = document.getElementById('progress-area');
+  var bar   = document.getElementById('progress-bar');
+  var bytes = document.getElementById('progress-bytes');
+  prog.style.display = 'block';
+  var p = 0, total = 2400000;
+  var iv = setInterval(function() {
+    p += Math.random() * 280000;
+    if (p >= total) {
+      p = total;
+      clearInterval(iv);
+      setTimeout(function() { prog.style.display = 'none'; bar.style.width = '0%'; }, 2200);
+    }
+    bar.style.width = Math.min((p / total * 100), 100) + '%';
+    bytes.textContent = p >= total ? '2.4 MB' : (p / 1000).toFixed(0) + ' KB';
+  }, 200);
+  downloadData();
+  showToast('Mengunduh peta...', 'success');
+}
+
+function downloadData() {
+  var dateVal = document.getElementById('date-picker').value;
+  var rows    = ['Provinsi,Kabupaten,Kecamatan,Status,Bencana,Tanggal'];
+  DATA.filter(function(d) { return currentBencana === 'banjir' ? d.bencana === 'banjir' : true; })
+      .forEach(function(d) { rows.push(d.provinsi + ',' + d.kabupaten + ',' + d.kecamatan + ',' + d.status + ',' + d.bencana + ',' + dateVal); });
+  var blob = new Blob([rows.join('\n')], { type: 'text/csv;charset=utf-8;' });
+  var url  = URL.createObjectURL(blob);
+  var a    = document.createElement('a');
+  a.href   = url;
+  a.download = 'data-bencana-' + currentBencana + '-' + dateVal + '.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('Data berhasil diunduh!', 'success');
+}
+
+// ============================================================
+// UTILS
+// ============================================================
+function copyLink() {
+  var url = document.getElementById('share-url').textContent;
+  navigator.clipboard.writeText(url)
+    .then(function()  { showToast('Tautan disalin!', 'success'); closeModal('share-modal'); })
+    .catch(function() { showToast('Gagal menyalin tautan', 'error'); });
+}
+
+function showToast(msg, type) {
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className   = 'toast show ' + (type || '');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(function() { t.className = 'toast'; }, 2800);
+}
+
+// ============================================================
+// INIT ON LOAD
+// ============================================================
+document.addEventListener('DOMContentLoaded', function() {
+  var today = getTodayStr();
+  document.getElementById('date-picker').value = today;
+  DATA = getDataForDate(today);
+  updateTopbarDate();
+  updateSidebarDate(today);
+  var dObj = new Date(today + 'T00:00:00');
+  document.getElementById('legend-date').textContent =
+    'Tanggal: ' + dObj.toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
+  _refreshBanjirCounts();
+
+  // Set initial history state agar tombol back bekerja dari halaman pertama
+  history.replaceState({ page: 'landing-home' }, 'Laman Utama');
+  _showLandingPageInternal('home');
+
+  window.addEventListener('scroll', function() {
+    var nav = document.getElementById('lp-navbar');
+    if (nav) nav.style.boxShadow = window.scrollY > 20 ? '0 4px 24px rgba(0,0,0,0.1)' : '0 2px 20px rgba(0,0,0,0.06)';
+  });
+
+  // Set today as default tanggal laporan
+  var todayStr2 = getTodayStr();
+  var tInput = document.getElementById('f-tanggal');
+  if (tInput) tInput.value = todayStr2;
+
+  // Init chatbot
+  chatInit();
+});
+
+// ============================================================
+// LAPOR FORM
+// ============================================================
+var currentStep = 1;
+
+function lapor_next(step) {
+  if (step === 1) {
+    if (!document.getElementById('f-provinsi').value || !document.getElementById('f-kabupaten').value.trim() || !document.getElementById('f-kecamatan').value.trim()) {
+      showToast('Harap isi Provinsi, Kabupaten, dan Kecamatan terlebih dahulu', 'error'); return;
+    }
+  }
+  if (step === 2) {
+    if (!document.getElementById('f-tanggal').value || !document.getElementById('f-status').value || !document.getElementById('f-tinggi').value) {
+      showToast('Harap isi Tanggal, Status Banjir, dan Tinggi Muka Air', 'error'); return;
+    }
+  }
+  if (step === 3) {
+    if (!document.getElementById('f-nama').value.trim()) {
+      showToast('Harap isi Nama Pelapor', 'error'); return;
+    }
+    buildReview();
+  }
+  document.getElementById('lapor-step-' + step).style.display = 'none';
+  document.getElementById('step-ind-' + step).classList.remove('active');
+  document.getElementById('step-ind-' + step).classList.add('done');
+  currentStep = step + 1;
+  document.getElementById('lapor-step-' + currentStep).style.display = 'block';
+  document.getElementById('step-ind-' + currentStep).classList.add('active');
+  document.getElementById('page-laporan').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function lapor_back(step) {
+  document.getElementById('lapor-step-' + step).style.display = 'none';
+  document.getElementById('step-ind-' + step).classList.remove('active');
+  currentStep = step - 1;
+  document.getElementById('lapor-step-' + currentStep).style.display = 'block';
+  document.getElementById('step-ind-' + currentStep).classList.remove('done');
+  document.getElementById('step-ind-' + currentStep).classList.add('active');
+}
+
+function buildReview() {
+  var prov    = document.getElementById('f-provinsi').value;
+  var kab     = document.getElementById('f-kabupaten').value;
+  var kec     = document.getElementById('f-kecamatan').value;
+  var desa    = document.getElementById('f-desa').value || '-';
+  var tgl     = document.getElementById('f-tanggal').value;
+  var waktu   = document.getElementById('f-waktu').value || '-';
+  var status  = document.getElementById('f-status').value;
+  var tinggi  = document.getElementById('f-tinggi').options[document.getElementById('f-tinggi').selectedIndex].text;
+  var luas    = document.getElementById('f-luas').value ? document.getElementById('f-luas').options[document.getElementById('f-luas').selectedIndex].text : '-';
+  var kk      = document.getElementById('f-kk').value || '-';
+  var nama    = document.getElementById('f-nama').value;
+  var telp    = document.getElementById('f-telp').value || '-';
+  var email   = document.getElementById('f-email').value || '-';
+
+  var row = function(l,v){ return '<div style="display:flex;gap:12px;padding:5px 0;border-bottom:1px solid #f1f5f9;"><span style="min-width:160px;color:#94a3b8;font-size:12px;">'+l+'</span><span style="font-weight:600;color:#0f172a;font-size:12.5px;">'+v+'</span></div>'; };
+  document.getElementById('lapor-review').innerHTML =
+    '<div style="font-size:11px;font-weight:700;color:#0057a8;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:10px;">📍 Lokasi</div>'+
+    row('Provinsi', prov) + row('Kabupaten/Kota', kab) + row('Kecamatan', kec) + row('Desa/Kelurahan', desa) +
+    '<div style="font-size:11px;font-weight:700;color:#0057a8;text-transform:uppercase;letter-spacing:0.06em;margin:14px 0 10px;">🌊 Detail Kejadian</div>'+
+    row('Tanggal', tgl) + row('Waktu', waktu) + row('Status Banjir', status) + row('Tinggi Muka Air', tinggi) + row('Luas Terdampak', luas) + row('Jumlah KK', kk + ' KK') +
+    '<div style="font-size:11px;font-weight:700;color:#0057a8;text-transform:uppercase;letter-spacing:0.06em;margin:14px 0 10px;">👤 Pelapor</div>'+
+    row('Nama', nama) + row('Telepon', telp) + row('Email', email);
+}
+
+function submitLaporan() {
+  var btn = document.querySelector('.btn-lapor-submit');
+  btn.disabled = true;
+  btn.textContent = '⏳ Mengirim...';
+  setTimeout(function() {
+    var nomor = 'BNPB-2026-' + Math.floor(10000 + Math.random() * 89999);
+    document.getElementById('nomor-laporan').textContent = nomor;
+    document.getElementById('lapor-step-4').style.display = 'none';
+    document.getElementById('lapor-steps').style.display = 'none';
+    document.getElementById('lapor-success').style.display = 'block';
+    document.getElementById('page-laporan').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    showToast('Laporan berhasil dikirim! No: ' + nomor, 'success');
+    btn.disabled = false;
+    btn.textContent = '📤 Kirim Laporan';
+  }, 1800);
+}
+
+function lapor_reset() {
+  currentStep = 1;
+  ['f-provinsi','f-kabupaten','f-kecamatan','f-desa','f-alamat','f-lat','f-lng',
+   'f-tanggal','f-waktu','f-status','f-tinggi','f-luas','f-kk','f-keterangan',
+   'f-nama','f-telp','f-email'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.value = el.tagName === 'SELECT' ? '' : '';
+  });
+  document.querySelectorAll('.lapor-check input').forEach(function(c){ c.checked = false; });
+  document.getElementById('foto-preview').innerHTML = '';
+  document.getElementById('lapor-success').style.display = 'none';
+  document.getElementById('lapor-steps').style.display = 'flex';
+  for (var i = 1; i <= 4; i++) {
+    var si = document.getElementById('step-ind-' + i);
+    si.classList.remove('active', 'done');
+    var s = document.getElementById('lapor-step-' + i);
+    s.style.display = i === 1 ? 'block' : 'none';
+  }
+  document.getElementById('step-ind-1').classList.add('active');
+  document.getElementById('f-tanggal').value = getTodayStr();
+}
+
+function handleFiles(files) {
+  var prev = document.getElementById('foto-preview');
+  var count = prev.children.length;
+  Array.from(files).slice(0, 3 - count).forEach(function(f) {
+    if (!f.type.startsWith('image/')) return;
+    var wrap = document.createElement('div');
+    wrap.className = 'foto-thumb-wrap';
+    var img = document.createElement('img');
+    img.className = 'foto-thumb';
+    var reader = new FileReader();
+    reader.onload = function(e) { img.src = e.target.result; };
+    reader.readAsDataURL(f);
+    var btn = document.createElement('button');
+    btn.className = 'foto-remove';
+    btn.innerHTML = '✕';
+    btn.onclick = function() { wrap.remove(); };
+    wrap.appendChild(img);
+    wrap.appendChild(btn);
+    prev.appendChild(wrap);
+  });
+}
+
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('upload-area').classList.remove('dragover');
+  handleFiles(e.dataTransfer.files);
+}
+
+function loadKabupaten() { /* placeholder */ }
+
+// ============================================================
+// CHATBOT
+// ============================================================
+var chatOpen = false;
+var chatHistory = [];
+
+var QA = [
+  { q: ['apa itu dashboard pencegahan','apa fungsi portal ini','tentang portal ini','penjelasan portal','apa ini','tentang apa'],
+    a: 'Dashboard Pencegahan adalah portal kebencanaan nasional yang dikembangkan oleh <b>GEOCARE</b> (Kartografi & Penginderaan Jauh UGM Angkatan 2024) sejak 2026. Fungsinya mengkompilasi prediksi bahaya banjir dan bencana lainnya berdasarkan data dari BMKG, BNPB, PUPR, dan KLHK secara real-time.' },
+  { q: ['siapa yang buat','siapa pembuat','pengembang portal','dibuat oleh siapa','geocare itu apa','tentang geocare'],
+    a: '🌿 Portal ini dikembangkan oleh <b>GEOCARE</b> — Geospatial Cartography And Remote Sensing for Environmental Care. Kami adalah kelompok mahasiswa <b>Jurusan Kartografi dan Penginderaan Jauh Angkatan 2024</b>, Universitas Gadjah Mada, yang berdedikasi menggunakan ilmu geospasial untuk membantu masyarakat menghadapi bencana.' },
+  { q: ['cara lapor banjir','bagaimana melaporkan banjir','lapor kejadian','cara melapor','laporan banjir','mau lapor','laporkan banjir'],
+    a: 'Untuk melaporkan banjir: klik menu <b>Lapor Kejadian</b> di navbar → isi formulir 4 langkah (Lokasi → Detail Kejadian → Dokumentasi → Konfirmasi) → klik <b>Kirim Laporan</b>. Anda tidak perlu login untuk melaporkan.' },
+  { q: ['cara lapor bencana','lapor longsor','lapor gempa','lapor bencana lain','laporkan bencana'],
+    a: 'Untuk melaporkan bencana apa pun (banjir, longsor, dll): klik menu <b>Lapor Kejadian</b> di navbar, lalu isi formulir lengkap dengan lokasi, detail kejadian, dan dokumentasi foto jika ada. Laporan akan langsung diteruskan ke tim BNPB setempat.' },
+  { q: ['apa itu status awas','status awas artinya','bahaya awas','level awas'],
+    a: '🔴 <b>Status AWAS</b> adalah tingkat peringatan tertinggi. Berarti potensi banjir sangat tinggi dan mengancam jiwa. Warga di area ini diminta segera mengungsi ke tempat aman dan mengikuti arahan petugas BPBD.' },
+  { q: ['apa itu status siaga','status siaga artinya','level siaga'],
+    a: '🟡 <b>Status SIAGA</b> adalah tingkat peringatan menengah. Berarti potensi banjir sedang dan perlu kewaspadaan tinggi. Warga disarankan menyiapkan barang penting dan siap evakuasi sewaktu-waktu.' },
+  { q: ['apa itu status waspada','status waspada artinya','level waspada'],
+    a: '🟢 <b>Status WASPADA</b> adalah tingkat peringatan dasar. Berarti potensi banjir ada namun masih rendah. Warga diminta memantau perkembangan informasi dan mempersiapkan langkah antisipasi.' },
+  { q: ['bedanya awas siaga waspada','perbedaan status','tingkatan peringatan','level peringatan'],
+    a: 'Ada 3 tingkatan peringatan:<br>🟢 <b>WASPADA</b> — potensi rendah, pantau terus<br>🟡 <b>SIAGA</b> — potensi sedang, siapkan barang penting<br>🔴 <b>AWAS</b> — potensi tinggi, segera evakuasi!' },
+  { q: ['cara melihat peta','buka peta interaktif','peta banjir','peta bencana','lihat peta'],
+    a: 'Klik tombol <b>Buka Peta Interaktif</b> di halaman utama, atau klik menu <b>Buka Peta Interaktif</b> di navbar. Di peta, titik merah = Awas, kuning = Siaga, hijau = Waspada. Klik titik untuk detail wilayah.' },
+  { q: ['download data','unduh data','download csv','unduh peta','export data'],
+    a: 'Data dapat diunduh dalam format CSV melalui: (1) Panel Analisis Wilayah → tombol Unduh Data, atau (2) Tab Koleksi Data → tombol Unduh CSV, atau (3) Sidebar → Unduh Peta. Format lain (GeoJSON, Shapefile) tersedia di halaman Detail Informasi.' },
+  { q: ['layer reanalisis','apa itu reanalisis'],
+    a: '<b>Layer Reanalisis</b> adalah layer utama yang menampilkan data historis dan hasil analisis numerik dari berbagai sumber (BMKG, PUPR). Ini adalah layer paling akurat untuk melihat kondisi banjir saat ini.' },
+  { q: ['layer signature','apa itu signature'],
+    a: '<b>Layer Signature</b> adalah layer prakiraan cuaca berbasis dampak dari BMKG. Menampilkan prediksi potensi banjir berdasarkan model cuaca numerik 24-72 jam ke depan.' },
+  { q: ['layer satgas','apa itu satgas banjir'],
+    a: '<b>Layer Satgas Banjir</b> adalah layer laporan lapangan dari Satuan Tugas Banjir Kementerian PUPR. Data berasal dari petugas di lapangan secara langsung.' },
+  { q: ['sumber data','dari mana data ini','data dari mana','asal data'],
+    a: 'Data peringatan dini berasal dari 4 lembaga: 🔵 <b>BNPB</b> (Inarisk), 🔴 <b>BMKG</b> (Signature & prakiraan cuaca), 🔵 <b>PUPR</b> (Satgas Banjir, Sihka, Simadu), 🟢 <b>KLHK</b> (SIGAP & tutupan lahan).' },
+  { q: ['cara login','masuk dashboard','login admin','login','daftar akun'],
+    a: 'Klik tombol <b>Login</b> di kanan atas navbar. Anda bisa masuk dengan username apapun sebagai tamu, atau menggunakan akun resmi untuk akses penuh. Fitur pelaporan tersedia tanpa login.' },
+  { q: ['data diperbarui','kapan update','frekuensi update','update berapa kali'],
+    a: 'Data peringatan dini diperbarui <b>setiap hari pukul 07:00 WIB</b>. Untuk event banjir aktif, pembaruan bisa lebih sering. Layer Satgas Banjir diperbarui secara real-time oleh petugas lapangan.' },
+  { q: ['kontak','hubungi','email','contact','telepon tim'],
+    a: 'Untuk pertanyaan teknis: 📧 <b>geocare.kartografi24@mail.ugm.ac.id</b>. Untuk darurat bencana, hubungi <b>BPBD setempat</b> atau call center BNPB <b>117</b>.' },
+  { q: ['web terkait','website mitra','link bmkg','link pupr','portal lain'],
+    a: 'Portal mitra yang terhubung: inaRISK (inarisk.bnpb.go.id), BMKG Signature (bmkg.go.id), Sihka PUPR (sda.pu.go.id), BBWS Bengawan Solo, SIGAP KLHK. Kunjungi halaman <b>Web Terkait</b> di navbar.' },
+  { q: ['evakuasi','jalur evakuasi','harus ke mana kalau banjir','langkah darurat','apa yang harus dilakukan'],
+    a: '🆘 Jika status wilayah Anda AWAS: (1) Segera evakuasi ke tempat lebih tinggi, (2) Hubungi BPBD atau Kelurahan setempat, (3) Bawa dokumen penting & obat-obatan, (4) Matikan listrik sebelum meninggalkan rumah, (5) Ikuti arahan petugas.' },
+  { q: ['resolusi data','akurasi data','tingkat kecamatan','seberapa akurat'],
+    a: 'Data ditampilkan hingga tingkat <b>kecamatan (administrasi tingkat 4)</b> dengan proyeksi WGS 84 (EPSG:4326). Akurasi spasial ±500 meter. Resolusi dapat ditingkatkan dengan aktivasi layer Satgas Banjir.' },
+  { q: ['banjir','bencana banjir','banjir di mana','area banjir','wilayah banjir'],
+    a: 'Untuk melihat wilayah yang terdampak banjir saat ini, buka <b>Peta Interaktif</b> dari halaman utama. Titik merah = Awas, kuning = Siaga, hijau = Waspada. Klik titik mana pun untuk detail kecamatan.' },
+  { q: ['tanah longsor','longsor','bencana longsor'],
+    a: '⛰️ Untuk informasi potensi tanah longsor, gunakan filter <b>Jenis Bencana</b> di sidebar peta dan pilih "Tanah Longsor". Data bersumber dari BNPB dan KLHK. Peta menampilkan zona risiko per kecamatan.' },
+  { q: ['gempa bumi','gempa','earthquake','potensi gempa'],
+    a: '🌍 Untuk informasi gempa bumi terkini, gunakan menu jenis bencana di sidebar peta. Data gempa real-time disuplai dari BMKG. Anda juga bisa mengunjungi langsung bmkg.go.id untuk data seismik detail.' },
+  { q: ['prakiraan cuaca','cuaca hari ini','ramalan cuaca','hujan hari ini'],
+    a: '🌧️ Prakiraan cuaca terintegrasi tersedia melalui <b>Layer Signature BMKG</b> di peta interaktif. Layer ini menampilkan prediksi curah hujan dan potensi banjir 24–72 jam ke depan berbasis model numerik cuaca.' },
+  { q: ['wilayah saya','cek wilayah','status daerah saya','cek lokasi'],
+    a: 'Untuk mengecek status wilayah Anda: (1) Buka Peta Interaktif, (2) Gunakan kotak pencarian di sudut kiri atas peta untuk mengetik nama desa/kecamatan/kabupaten, (3) Klik wilayah untuk melihat status peringatan terkini.' },
+  { q: ['notifikasi','peringatan dini masuk','dapat notif','alert'],
+    a: '🔔 Sistem notifikasi peringatan dini dikirimkan oleh BPBD ke saluran resmi (WhatsApp Siaga, SMS Blast, dan radio). Untuk peringatan real-time, pantau terus dashboard ini setiap pagi pukul 07:00 WIB.' },
+  { q: ['bnpb','bpbd','pemerintah','instansi terkait'],
+    a: 'BNPB (Badan Nasional Penanggulangan Bencana) adalah lembaga nasional yang mengelola data kebencanaan Indonesia. Untuk urusan darurat di daerah, hubungi <b>BPBD (Badan Penanggulangan Bencana Daerah)</b> di kabupaten/kota Anda, atau telepon <b>117</b>.' },
+  { q: ['snack','makanan','minuman'],
+    a: 'Hmm, sepertinya saya salah dashboard 😄 Tapi jika Anda baru saja terdampak bencana dan membutuhkan logistik, segera hubungi <b>BPBD setempat atau 117</b> untuk koordinasi bantuan.' },
+  { q: ['terima kasih','makasih','thanks','ok','oke','mantap'],
+    a: 'Sama-sama! 😊 Jika ada pertanyaan lain seputar bencana atau penggunaan dashboard ini, jangan ragu untuk bertanya. Tetap waspada dan jaga keselamatan ya!' },
+  { q: ['halo','hai','hello','hi','selamat pagi','selamat siang','selamat malam'],
+    a: 'Halo! 👋 Selamat datang di Dashboard Pencegahan Bencana GEOCARE. Ada yang bisa saya bantu hari ini? Anda bisa tanya soal status peringatan, cara lapor bencana, atau fitur-fitur di portal ini.' },
+];
+
+function chatInit() {
+  addBotMessage('Halo! Saya <b>Asisten GEOCARE</b> 🌿 Saya siap membantu menjawab pertanyaan seputar peringatan bencana, cara melapor, dan penggunaan dashboard. Silakan tanya apa saja!');
+  renderSuggestions(['Siapa pembuat portal ini?', 'Status Awas artinya apa?', 'Cara lapor banjir?', 'Cara buka peta?']);
+}
+
+function toggleChat() {
+  chatOpen = !chatOpen;
+  var w = document.getElementById('chatbot-window');
+  if (chatOpen) w.classList.add('open');
+  else w.classList.remove('open');
+}
+
+function addBotMessage(text) {
+  var msgs = document.getElementById('chat-messages');
+  var div = document.createElement('div');
+  div.className = 'chat-msg bot';
+  div.innerHTML = '<div class="chat-bubble">' + text + '</div>';
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function addUserMessage(text) {
+  var msgs = document.getElementById('chat-messages');
+  var div = document.createElement('div');
+  div.className = 'chat-msg user';
+  div.innerHTML = '<div class="chat-bubble">' + text + '</div>';
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function showTyping() {
+  var msgs = document.getElementById('chat-messages');
+  var div = document.createElement('div');
+  div.className = 'chat-msg bot';
+  div.id = 'chat-typing';
+  div.innerHTML = '<div class="chat-bubble"><div class="chat-typing"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div></div>';
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function hideTyping() {
+  var t = document.getElementById('chat-typing');
+  if (t) t.remove();
+}
+
+function findAnswer(q) {
+  q = q.toLowerCase().trim()
+       .replace(/[?!.,;:]/g,'')
+       .replace(/\s+/g,' ');
+
+  // Try exact/substring match first
+  for (var i = 0; i < QA.length; i++) {
+    for (var j = 0; j < QA[i].q.length; j++) {
+      var kw = QA[i].q[j].toLowerCase();
+      if (q === kw || q.indexOf(kw) > -1 || kw.indexOf(q) > -1) return QA[i].a;
+    }
+  }
+
+  // Word-overlap match
+  var qWords = q.split(' ').filter(function(w){ return w.length > 2; });
+  var bestScore = 0, bestAns = null;
+  for (var i = 0; i < QA.length; i++) {
+    for (var j = 0; j < QA[i].q.length; j++) {
+      var kw = QA[i].q[j].toLowerCase();
+      var kwWords = kw.split(' ').filter(function(w){ return w.length > 2; });
+      var hits = 0;
+      for (var k = 0; k < kwWords.length; k++) {
+        if (q.indexOf(kwWords[k]) > -1) hits++;
+      }
+      for (var k = 0; k < qWords.length; k++) {
+        if (kw.indexOf(qWords[k]) > -1) hits += 0.5;
+      }
+      var score = kwWords.length > 0 ? hits / kwWords.length : 0;
+      if (score > bestScore && score >= 0.45) { bestScore = score; bestAns = QA[i].a; }
+    }
+  }
+  return bestAns;
+}
+
+function renderSuggestions(list) {
+  var el = document.getElementById('chat-suggestions');
+  el.innerHTML = list.map(function(s) {
+    return '<button class="chat-sug-btn" onclick="handleSuggestion(\'' + s.replace(/'/g,"\\'")+'\')">'+s+'</button>';
+  }).join('');
+}
+
+function handleSuggestion(text) {
+  sendChatMsg(text);
+}
+
+function sendChat() {
+  var input = document.getElementById('chat-input');
+  var text = input.value.trim();
+  if (!text) return;
+  input.value = '';
+  sendChatMsg(text);
+}
+
+function sendChatMsg(text) {
+  document.getElementById('chat-suggestions').innerHTML = '';
+  addUserMessage(text);
+  showTyping();
+  setTimeout(function() {
+    hideTyping();
+    var ans = findAnswer(text);
+    if (ans) {
+      addBotMessage(ans);
+      // Context-aware follow-up suggestions
+      var sugs = [];
+      if (ans.indexOf('Awas') > -1 || ans.indexOf('AWAS') > -1) sugs = ['Status Siaga?', 'Harus evakuasi ke mana?', 'Cara buka peta'];
+      else if (ans.indexOf('melapor') > -1 || ans.indexOf('lapor') > -1) sugs = ['Status Awas artinya?', 'Data diperbarui kapan?', 'Kontak BNPB'];
+      else if (ans.indexOf('layer') > -1 || ans.indexOf('peta') > -1) sugs = ['Download data CSV?', 'Sumber data dari mana?', 'Cara lapor banjir?'];
+      else sugs = ['Cara lapor banjir?', 'Status Awas artinya?', 'Kontak BNPB'];
+      renderSuggestions(sugs);
+    } else {
+      addBotMessage('Maaf, saya belum memiliki jawaban spesifik untuk pertanyaan itu. Coba tanyakan dengan kata kunci berbeda, atau hubungi tim GEOCARE di 📧 <b>geocare.kartografi24@mail.ugm.ac.id</b>. Untuk darurat bencana, telepon <b>BNPB 117</b>.');
+      renderSuggestions(['Cara lapor banjir?', 'Sumber data?', 'Kontak tim?']);
+    }
+  }, 800);
+}
+</script>
+</body>
+</html>
